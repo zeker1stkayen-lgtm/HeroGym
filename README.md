@@ -57,3 +57,10 @@ HeroGym/
     └── Profile/
         └── ProfileView.swift
 ```
+
+## 📱 Веб-приложение (PWA для iPhone без Mac):
+- **Онлайн-версия:** [https://zeker1stkayen-lgtm.github.io/HeroGym/](https://zeker1stkayen-lgtm.github.io/HeroGym/)
+- **100% Offline:** Поддержка `ServiceWorker` (`sw.js`) и сохранение всех данных на устройстве (`localStorage`).
+- **Адаптировано под iPhone 13 Pro:** Крупные шрифты (16px+), увеличенные области нажатия, темная тема WotLK.
+- **Добавление на экран «Домой»:** Открыть в Safari -> кнопка «Поделиться» -> «На экран "Домой"».
+
