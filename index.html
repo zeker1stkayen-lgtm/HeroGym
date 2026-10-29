@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <!-- iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HeroGym">
+  <meta name="theme-color" content="#0a0e1a">
+  
+  <title>HeroGym</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg-deep: #0a0e1a;
+      --bg-card: #111827;
+      --border: #1e3a5f;
+      --ice: #60a5fa;
+      --ice-bright: #38bdf8;
+      --gold: #f59e0b;
+      --gold-light: #fbbf24;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .font-cinzel { font-family: 'Cinzel', serif; }
+
+    .header-bar {
+      padding: 12px 16px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(17, 24, 39, 0.95);
+      border-bottom: 1px solid rgba(30, 58, 95, 0.6);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(10px);
+    }
+
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      padding-bottom: 80px;
+    }
+
+    .tabbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(62px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: rgba(13, 19, 34, 0.95);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 40;
+      backdrop-filter: blur(15px);
+    }
+
+    .tab-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--ice-bright);
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .card {
+      background: linear-gradient(145deg, #111827 0%, #0c1220 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .card-glow {
+      border-color: rgba(56, 189, 248, 0.4);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      color: #000;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform 0.15s;
+    }
+    .btn-gold:active { transform: scale(0.97); }
+
+    .overlay-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 14, 26, 0.98);
+      z-index: 50;
+      padding: 16px;
+      padding-top: calc(16px + env(safe-area-inset-top));
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .overlay-modal.active { display: flex; }
+
+    .toast-msg {
+      position: fixed;
+      top: calc(50px + env(safe-area-inset-top));
+      left: 20px;
+      right: 20px;
+      background: rgba(16, 185, 129, 0.95);
+      color: #000;
+      font-weight: bold;
+      font-size: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 70;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast-msg" id="toastMsg"></div>
+
+  <!-- Top Header -->
+  <div class="header-bar">
+    <div class="flex items-center gap-2">
+      <span class="text-sm font-bold text-amber-400 font-cinzel">⚔️ HERO GYM</span>
+    </div>
+    <button onclick="toggleCalendar(true)" class="flex items-center gap-1.5 text-xs bg-slate-800 text-sky-400 px-3 py-1.5 rounded-lg border border-sky-500/40">
+      <span>📅</span>
+      <span class="font-semibold">Летопись</span>
+    </button>
+  </div>
+
+  <!-- Main Screen Content -->
+  <div class="main-content" id="mainScreen"></div>
+
+  <!-- TabBar -->
+  <div class="tabbar">
+    <div class="tab-btn active" onclick="switchTab('character')">
+      <span class="text-lg">🧙</span>
+      <span class="text-[10px] font-semibold">Персонаж</span>
+    </div>
+    <div class="tab-btn" onclick="switchTab('nutrition')">
+      <span class="text-lg">🍽</span>
+      <span class="text-[10px] font-semibold">Питание</span>
+    </div>
+    <div class="tab-btn" onclick="switchTab('workouts')">
+      <span class="text-lg">🏋️</span>
+      <span class="text-[10px] font-semibold">Тренировки</span>
+    </div>
+    <div class="tab-btn" onclick="switchTab('profile')">
+      <span class="text-lg">👤</span>
+      <span class="text-[10px] font-semibold">Профиль</span>
+    </div>
+  </div>
+
+  <!-- Modal: Workout Form -->
+  <div class="overlay-modal" id="workoutModal">
+    <div class="flex justify-between items-center mb-3">
+      <div class="font-cinzel text-amber-400 font-bold text-sm" id="workoutModalTitle">⚔️ НОВАЯ ТРЕНИРОВКА</div>
+      <button onclick="closeWorkoutModal()" class="text-slate-400 hover:text-white text-xl">✕</button>
+    </div>
+    <div class="space-y-3" id="workoutModalBody"></div>
+  </div>
+
+  <!-- Modal: Calendar -->
+  <div class="overlay-modal" id="calendarModal">
+    <div class="flex justify-between items-center mb-3">
+      <div class="font-cinzel text-amber-400 font-bold text-sm">📅 ЛЕТОПИСЬ ТРЕНИРОВОК</div>
+      <button onclick="toggleCalendar(false)" class="text-slate-400 hover:text-white text-xl">✕</button>
+    </div>
+
+    <div class="card card-glow mb-3">
+      <div class="text-xs font-bold text-sky-300 mb-2">ОКТЯБРЬ 2026</div>
+      <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400 mb-1">
+        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+      </div>
+      <div class="grid grid-cols-7 gap-1 text-center text-xs" id="calendarDays"></div>
+    </div>
+
+    <div class="flex items-center gap-2 text-[10px] text-slate-400 mb-3 px-1">
+      <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+      <span>Точки отмечают <b>только дни выполненных тренировок</b></span>
+    </div>
+
+    <div id="daySummaryContainer"></div>
+  </div>
+
+  <!-- Modal: Weight Tip -->
+  <div class="overlay-modal" id="weightTipModal" style="justify-content: center;">
+    <div class="card border-sky-500/60 p-4">
+      <div class="text-sm font-bold text-sky-300 mb-2">⚖️ Рекомендация по взвешиванию</div>
+      <ul class="text-xs text-slate-300 space-y-1.5 mb-3 list-disc pl-4">
+        <li>Утром сразу после пробуждения</li>
+        <li>Строго натощак и после посещения туалета</li>
+        <li>Без одежды и в одно и то же время</li>
+      </ul>
+      <p class="text-[11px] text-amber-300/90 mb-4">
+        💡 Колебания веса от 0.5 до 1.5 кг за день из-за воды и соли — норма. Смотрите на график тренда недели!
+      </p>
+      <button onclick="document.getElementById('weightTipModal').classList.remove('active')" class="btn-gold w-full text-xs">Понятно</button>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let userProfile = {
+      name: "Юсуп",
+      gender: "male",
+      age: 25,
+      height: 177,
+      currentWeight: 67.0,
+      targetWeight: 72.0,
+      currentGoal: "bulk"
+    };
+
+    let weightHistory = [
+      { date: "24 окт", val: 66.4 },
+      { date: "25 окт", val: 66.7 },
+      { date: "26 окт", val: 66.5 },
+      { date: "27 окт", val: 66.9 },
+      { date: "28 окт", val: 66.8 },
+      { date: "29 окт", val: 67.0 }
+    ];
+
+    let measurements = {
+      chest: { name: 'Грудь', cur: 98, tgt: 105, isCut: false },
+      waist: { name: 'Талия', cur: 82, tgt: 78, isCut: true },
+      arms: { name: 'Рука/Бицепс', cur: 36, tgt: 40, isCut: false },
+      glutes: { name: 'Ягодицы', cur: 96, tgt: 98, isCut: false },
+      hips: { name: 'Бедро', cur: 56, tgt: 60, isCut: false },
+      calves: { name: 'Икра', cur: 37, tgt: 39, isCut: false }
+    };
+    let isMeasurementsOpen = false;
+
+    let workouts = [
+      {
+        id: "w1",
+        date: "22.05.2025",
+        weekText: "Неделя 6",
+        type: "strength",
+        exercises: [
+          { name: "Жим лёжа", weight: 67, reps: 4, sets: 6, rpe: 8 },
+          { name: "Сведение в тренажёре", weight: 40, reps: 8, sets: 1, rpe: 7 }
+        ]
+      },
+      {
+        id: "w2",
+        date: "12.05.2025",
+        weekText: "Неделя 5",
+        type: "strength",
+        exercises: [
+          { name: "Жим лёжа", weight: 60, reps: 8, sets: 4, rpe: 7 },
+          { name: "Гантели наклон", weight: 13.6, reps: 12, sets: 1, rpe: 6 }
+        ]
+      }
+    ];
+
+    let editingWorkout = null;
+
+    let meals = [
+      { id: 1, name: '🍳 Завтрак', p: 40, f: 20, c: 80 },
+      { id: 2, name: '🍲 Обед', p: 50, f: 25, c: 110 },
+      { id: 3, name: '🥩 Ужин', p: 45, f: 22, c: 90 }
+    ];
+
+    let activeTab = 'character';
+
+    function getGoalTargetData(goal) {
+      const g = goal || userProfile.currentGoal;
+      const w = userProfile.currentWeight;
+      const p = Math.round(w * 2.0);
+      const f = Math.round(w * 1.0);
+      let kcal = 2270;
+      if (g === 'cut') kcal = 1770;
+      if (g === 'bulk') kcal = 2570;
+      const carbKcal = kcal - (p * 4) - (f * 9);
+      const c = Math.max(0, Math.round(carbKcal / 4));
+      return { goal: g, kcal, p, f, c };
+    }
+
+    function calculateTotalCalories() {
+      let p = 0, f = 0, c = 0;
+      meals.forEach(m => {
+        p += Number(m.p) || 0;
+        f += Number(m.f) || 0;
+        c += Number(m.c) || 0;
+      });
+      return {
+        p: Math.round(p),
+        f: Math.round(f),
+        c: Math.round(c),
+        kcal: Math.round((p * 4) + (f * 9) + (c * 4))
+      };
+    }
+
+    function showToast(text) {
+      const t = document.getElementById('toastMsg');
+      t.innerText = text;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 2200);
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        const tabs = ['character', 'nutrition', 'workouts', 'profile'];
+        btn.classList.toggle('active', tabs[idx] === tab);
+      });
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('mainScreen');
+      if (activeTab === 'character') container.innerHTML = getCharacterHTML();
+      else if (activeTab === 'nutrition') container.innerHTML = getNutritionHTML();
+      else if (activeTab === 'workouts') container.innerHTML = getWorkoutsHTML();
+      else if (activeTab === 'profile') container.innerHTML = getProfileHTML();
+    }
+
+    // 1. CHARACTER SCREEN
+    function getCharacterHTML() {
+      const currentGoalData = getGoalTargetData(userProfile.currentGoal);
+      const goalBadge = userProfile.currentGoal === 'bulk' ? '🔨 НАБОР МАССЫ' : (userProfile.currentGoal === 'cut' ? '🔻 ПОХУДЕНИЕ' : '⚖️ В БАЛАНСЕ');
+
+      return `
+        <div class="text-center mb-2">
+          <div class="text-[10px] font-black tracking-widest text-amber-400 font-cinzel">LEVEL 7 · РЫЦАРЬ СИЛЫ</div>
+          <div class="text-xl font-bold font-cinzel text-white">${userProfile.name}</div>
+        </div>
+
+        <div class="card card-glow mb-3">
+          <div class="flex items-center gap-3.5">
+            <div class="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-amber-400 bg-gradient-to-b from-slate-900 via-sky-950 to-slate-950 flex items-center justify-center shadow-lg shadow-sky-500/20">
+              <svg width="56" height="56" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(56,189,248,0.3)" stroke-width="2" stroke-dasharray="4 2"/>
+                <path d="M 12 18 Q 20 28 26 32" stroke="#94a3b8" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <path d="M 52 18 Q 44 28 38 32" stroke="#94a3b8" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <path d="M 22 24 Q 32 12 42 24 L 44 44 Q 32 48 20 44 Z" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+                <rect x="25" y="32" width="14" height="4" rx="2" fill="#38bdf8" filter="drop-shadow(0 0 6px #38bdf8)"/>
+                <line x1="32" y1="36" x2="32" y2="44" stroke="#64748b" stroke-width="2"/>
+                <line x1="27" y1="40" x2="37" y2="40" stroke="#64748b" stroke-width="1.5"/>
+                <path d="M 14 54 Q 32 48 50 54 L 46 62 Q 32 58 18 62 Z" fill="#0f172a" stroke="#f59e0b" stroke-width="1.2"/>
+              </svg>
+              <div class="absolute bottom-0 inset-x-0 bg-slate-900/90 text-[8px] font-bold text-center text-amber-300 border-t border-amber-500/40">LVL 7</div>
+            </div>
+
+            <div class="flex-1">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-sky-400">${userProfile.currentWeight.toFixed(1)} кг <span class="text-slate-400 font-normal">→ ${userProfile.targetWeight.toFixed(1)} кг</span></span>
+                <span class="text-[10px] font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">${goalBadge}</span>
+              </div>
+              <div class="w-full bg-slate-800 h-2 rounded mt-2 overflow-hidden border border-slate-700">
+                <div class="bg-gradient-to-r from-purple-600 to-purple-400 h-full w-[65%]"></div>
+              </div>
+              <div class="flex justify-between text-[9px] text-slate-400 mt-1">
+                <span>XP Опыт героя</span>
+                <span>650 / 1000 XP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-slate-300 font-semibold">🎯 Текущий план питания:</span>
+            <span class="text-amber-400 font-bold">${currentGoalData.kcal} ккал/день</span>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-400 bg-slate-900/60 p-2 rounded">
+            <span>Белки: <b class="text-red-400">${currentGoalData.p}г</b></span>
+            <span>Жиры: <b class="text-amber-400">${currentGoalData.f}г</b></span>
+            <span>Углеводы: <b class="text-sky-400">${currentGoalData.c}г</b></span>
+          </div>
+          <div class="flex justify-between items-center text-xs pt-1">
+            <span class="text-slate-300 font-semibold">🛡 Дисциплина цели:</span>
+            <span class="text-sky-300 font-bold">6 дней подряд 🔥</span>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-[11px] font-bold text-sky-300 font-cinzel">📈 ДИНАМИКА ВЕСА (КГ)</span>
+            <span class="text-[10px] text-amber-400 font-semibold">Сегодня: ${userProfile.currentWeight.toFixed(1)} кг</span>
+          </div>
+          ${renderWeightChart()}
+        </div>
+      `;
+    }
+
+    function renderWeightChart() {
+      const minW = Math.min(...weightHistory.map(w => w.val)) - 0.5;
+      const maxW = Math.max(...weightHistory.map(w => w.val)) + 0.5;
+      const range = maxW - minW || 1;
+
+      const bars = weightHistory.map(item => {
+        const heightPct = Math.max(15, Math.min(100, Math.round(((item.val - minW) / range) * 70)));
+        return `
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-[9px] text-sky-300 font-bold">${item.val.toFixed(1)}</span>
+            <div class="w-full bg-slate-800 rounded-t flex items-end justify-center h-16">
+              <div class="w-3.5 bg-gradient-to-t from-sky-600 to-sky-400 rounded-t" style="height: ${heightPct}px;"></div>
+            </div>
+            <span class="text-[9px] text-slate-400">${item.date}</span>
+          </div>
+        `;
+      }).join('');
+
+      return `<div class="flex items-end justify-between gap-1 pt-1">${bars}</div>`;
+    }
+
+    // 2. NUTRITION SCREEN
+    function getNutritionHTML() {
+      const totals = calculateTotalCalories();
+      const goalTarget = getGoalTargetData(userProfile.currentGoal);
+      const pct = Math.min(150, Math.round((totals.kcal / goalTarget.kcal) * 100));
+
+      let mealsHTML = meals.map(m => `
+        <div class="card mb-2">
+          <div class="flex justify-between items-center text-xs mb-2">
+            <span class="font-bold text-white">${m.name}</span>
+            <span class="text-sky-300 font-semibold" id="mealKcal_${m.id}">${Math.round((m.p*4)+(m.f*9)+(m.c*4))} ккал</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <div class="text-[9px] text-red-400 mb-0.5">Белки (г)</div>
+              <input type="number" oninput="onMealInputWithoutBlur(${m.id}, 'p', this.value)" value="${m.p}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-xs text-white">
+            </div>
+            <div>
+              <div class="text-[9px] text-amber-400 mb-0.5">Жиры (г)</div>
+              <input type="number" oninput="onMealInputWithoutBlur(${m.id}, 'f', this.value)" value="${m.f}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-xs text-white">
+            </div>
+            <div>
+              <div class="text-[9px] text-sky-400 mb-0.5">Углеводы (г)</div>
+              <input type="number" oninput="onMealInputWithoutBlur(${m.id}, 'c', this.value)" value="${m.c}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-xs text-white">
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      return `
+        <div class="card card-glow mb-3">
+          <div class="flex justify-between items-baseline mb-1">
+            <div>
+              <div class="text-[10px] text-slate-400">КАЛОРИИ ЗА ДЕНЬ</div>
+              <div class="text-2xl font-black text-sky-300 font-cinzel">
+                <span id="totalKcalDisplay">${totals.kcal}</span> 
+                <span class="text-xs font-normal text-amber-400">/ ${goalTarget.kcal} ккал</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm font-bold ${pct >= 90 && pct <= 110 ? 'text-emerald-400' : 'text-amber-400'}" id="pctDisplay">${pct}%</div>
+              <div class="text-[9px] text-slate-400" id="pctStatus">${pct >= 90 && pct <= 110 ? 'В норме ✅' : 'Корректируй'}</div>
+            </div>
+          </div>
+          <div class="w-full bg-slate-800 h-2 rounded overflow-hidden border border-slate-700 mb-2">
+            <div class="bg-gradient-to-r from-sky-500 to-sky-300 h-full" id="progressBarFill" style="width: ${Math.min(100, pct)}%"></div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center text-xs pt-1">
+            <div class="p-1.5 rounded bg-red-950/30 border border-red-500/30">
+              <div class="text-red-400 font-bold" id="totalPDisplay">${totals.p}г</div>
+              <div class="text-[9px] text-slate-400">Белки (${goalTarget.p}г)</div>
+            </div>
+            <div class="p-1.5 rounded bg-amber-950/30 border border-amber-500/30">
+              <div class="text-amber-400 font-bold" id="totalFDisplay">${totals.f}г</div>
+              <div class="text-[9px] text-slate-400">Жиры (${goalTarget.f}г)</div>
+            </div>
+            <div class="p-1.5 rounded bg-sky-950/30 border border-sky-500/30">
+              <div class="text-sky-400 font-bold" id="totalCDisplay">${totals.c}г</div>
+              <div class="text-[9px] text-slate-400">Углеводы (${goalTarget.c}г)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-2 px-1">
+            <span>ПРИЁМЫ ПИЩИ</span>
+            <span class="text-sky-400">вводи свободно — фокус не слетает!</span>
+          </div>
+
+          <div id="mealsContainer">${mealsHTML}</div>
+
+          <button onclick="addSnack()" class="w-full py-2.5 rounded-lg border border-dashed border-amber-400/50 bg-amber-500/5 text-amber-400 text-xs font-bold hover:bg-amber-500/10 cursor-pointer">
+            + Добавить перекус
+          </button>
+        </div>
+      `;
+    }
+
+    function onMealInputWithoutBlur(id, field, val) {
+      const meal = meals.find(m => m.id === id);
+      if (meal) {
+        meal[field] = Number(val) || 0;
+        
+        const mealKcalEl = document.getElementById(`mealKcal_${id}`);
+        if (mealKcalEl) {
+          mealKcalEl.innerText = `${Math.round((meal.p * 4) + (meal.f * 9) + (meal.c * 4))} ккал`;
+        }
+
+        const totals = calculateTotalCalories();
+        const goalTarget = getGoalTargetData(userProfile.currentGoal);
+        const pct = Math.min(150, Math.round((totals.kcal / goalTarget.kcal) * 100));
+
+        const totalKcalEl = document.getElementById('totalKcalDisplay');
+        if (totalKcalEl) totalKcalEl.innerText = totals.kcal;
+
+        const totalPEl = document.getElementById('totalPDisplay');
+        if (totalPEl) totalPEl.innerText = `${totals.p}г`;
+
+        const totalFEl = document.getElementById('totalFDisplay');
+        if (totalFEl) totalFEl.innerText = `${totals.f}г`;
+
+        const totalCEl = document.getElementById('totalCDisplay');
+        if (totalCEl) totalCEl.innerText = `${totals.c}г`;
+
+        const pctEl = document.getElementById('pctDisplay');
+        if (pctEl) {
+          pctEl.innerText = `${pct}%`;
+          pctEl.className = `text-sm font-bold ${pct >= 90 && pct <= 110 ? 'text-emerald-400' : 'text-amber-400'}`;
+        }
+
+        const barEl = document.getElementById('progressBarFill');
+        if (barEl) barEl.style.width = `${Math.min(100, pct)}%`;
+      }
+    }
+
+    function addSnack() {
+      const count = meals.filter(m => m.name.includes('Перекус')).length + 1;
+      meals.push({ id: Date.now(), name: `🥪 Перекус ${count}`, p: 20, f: 10, c: 30 });
+      render();
+    }
+
+    // 3. WORKOUTS SCREEN
+    function getWorkoutsHTML() {
+      const workoutCards = workouts.map(w => {
+        const exList = w.exercises.map(ex => `
+          <div class="flex justify-between items-center text-xs py-0.5">
+            <span class="text-white font-medium">${ex.name}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-sky-300 font-bold">${ex.weight}×${ex.reps}×${ex.sets}</span>
+              <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-bold">RPE ${ex.rpe}</span>
+            </div>
+          </div>
+        `).join('');
+
+        return `
+          <div class="card card-glow mb-3">
+            <div class="flex justify-between items-center mb-2">
+              <div>
+                <span class="font-bold text-amber-400 text-sm">${w.date}</span>
+                <span class="text-[11px] text-slate-400 ml-2">${w.weekText}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button onclick="openEditWorkoutModal('${w.id}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-sky-400 px-2 py-0.5 rounded border border-sky-500/40 cursor-pointer">
+                  ✏️ Редактировать
+                </button>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">💪 Силовая</span>
+              </div>
+            </div>
+
+            <div class="space-y-1 text-xs border-t border-slate-800 pt-2 mb-1">
+              ${exList}
+            </div>
+            <div class="text-[10px] text-purple-400 font-bold text-right pt-1">+20 XP</div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="card flex justify-between items-center mb-3">
+          <div>
+            <div class="text-[10px] text-slate-400">ВЫБРАННАЯ ДАТА:</div>
+            <div class="text-sm font-bold text-amber-400">22.05.2025 (Неделя 6)</div>
+          </div>
+          <button onclick="toggleCalendar(true)" class="btn-gold text-xs px-2.5 py-1">Летопись 📅</button>
+        </div>
+
+        <button class="btn-gold w-full text-xs py-2.5 mb-3" onclick="openNewWorkoutModal()">
+          ➕ Записать тренировку
+        </button>
+
+        ${workoutCards}
+      `;
+    }
+
+    function openNewWorkoutModal() {
+      editingWorkout = {
+        id: "w_" + Date.now(),
+        date: "29.10.2026",
+        weekText: "Неделя 7",
+        type: "strength",
+        exercises: [
+          { name: "Жим лёжа", weight: 67, reps: 4, sets: 6, rpe: 8 }
+        ]
+      };
+      document.getElementById('workoutModalTitle').innerText = "⚔️ НОВАЯ ТРЕНИРОВКА";
+      renderWorkoutForm();
+      document.getElementById('workoutModal').classList.add('active');
+    }
+
+    function openEditWorkoutModal(workoutId) {
+      const found = workouts.find(w => w.id === workoutId);
+      if (found) {
+        editingWorkout = JSON.parse(JSON.stringify(found));
+        document.getElementById('workoutModalTitle').innerText = "✏️ РЕДАКТИРОВАНИЕ ТРЕНИРОВКИ";
+        renderWorkoutForm();
+        document.getElementById('workoutModal').classList.add('active');
+      }
+    }
+
+    function closeWorkoutModal() {
+      document.getElementById('workoutModal').classList.remove('active');
+      editingWorkout = null;
+    }
+
+    function renderWorkoutForm() {
+      if (!editingWorkout) return;
+
+      const exercisesHTML = editingWorkout.exercises.map((ex, idx) => `
+        <div class="card border-slate-700 p-2.5 mb-2 bg-slate-900/80">
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-xs font-bold text-sky-300">Упражнение #${idx + 1}</span>
+            <button onclick="removeExerciseFromDraft(${idx})" class="text-[11px] text-red-400 hover:text-red-300">Удалить ✕</button>
+          </div>
+          <input type="text" oninput="editingWorkout.exercises[${idx}].name=this.value" value="${ex.name}" placeholder="Название (напр. Жим лёжа)" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white mb-2">
+          
+          <div class="grid grid-cols-4 gap-1.5 text-center text-xs mb-2">
+            <div>
+              <div class="text-[9px] text-slate-400">Вес (кг)</div>
+              <input type="number" step="0.5" oninput="editingWorkout.exercises[${idx}].weight=Number(this.value)" value="${ex.weight}" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-center text-white">
+            </div>
+            <div>
+              <div class="text-[9px] text-slate-400">Повторы</div>
+              <input type="number" oninput="editingWorkout.exercises[${idx}].reps=Number(this.value)" value="${ex.reps}" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-center text-white">
+            </div>
+            <div>
+              <div class="text-[9px] text-slate-400">Подходы</div>
+              <input type="number" oninput="editingWorkout.exercises[${idx}].sets=Number(this.value)" value="${ex.sets}" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-center text-white">
+            </div>
+            <div>
+              <div class="text-[9px] text-amber-400">RPE (1-10)</div>
+              <input type="number" min="1" max="10" oninput="editingWorkout.exercises[${idx}].rpe=Number(this.value)" value="${ex.rpe}" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-center font-bold text-amber-300">
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('workoutModalBody').innerHTML = `
+        <div class="card p-2.5 mb-2">
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-0.5">Дата тренировки</label>
+              <input type="text" oninput="editingWorkout.date=this.value" value="${editingWorkout.date}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-0.5">Неделя цикла</label>
+              <input type="text" oninput="editingWorkout.weekText=this.value" value="${editingWorkout.weekText}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <div class="flex justify-between items-center text-xs mb-1 px-1">
+            <span class="text-slate-300 font-semibold">Список упражнений:</span>
+            <button onclick="addExerciseToDraft()" class="text-sky-400 hover:text-sky-300 text-xs font-bold">+ Ещё упражнение</button>
+          </div>
+          ${exercisesHTML}
+        </div>
+
+        <button onclick="saveWorkoutDraft()" class="btn-gold w-full text-xs py-2.5">
+          💾 Сохранить тренировку
+        </button>
+      `;
+    }
+
+    function addExerciseToDraft() {
+      if (!editingWorkout) return;
+      editingWorkout.exercises.push({ name: "Новое упражнение", weight: 50, reps: 10, sets: 3, rpe: 8 });
+      renderWorkoutForm();
+    }
+
+    function removeExerciseFromDraft(idx) {
+      if (!editingWorkout) return;
+      editingWorkout.exercises.splice(idx, 1);
+      renderWorkoutForm();
+    }
+
+    function saveWorkoutDraft() {
+      if (!editingWorkout) return;
+      const existingIdx = workouts.findIndex(w => w.id === editingWorkout.id);
+      if (existingIdx >= 0) {
+        workouts[existingIdx] = editingWorkout;
+        showToast("✅ Тренировка успешно обновлена!");
+      } else {
+        workouts.unshift(editingWorkout);
+        showToast("✅ Новая тренировка сохранена в журнал!");
+      }
+      closeWorkoutModal();
+      render();
+    }
+
+    // 4. PROFILE SCREEN
+    function getProfileHTML() {
+      const cutTarget = getGoalTargetData('cut');
+      const maintainTarget = getGoalTargetData('maintain');
+      const bulkTarget = getGoalTargetData('bulk');
+
+      let rowsHTML = Object.keys(measurements).map(key => {
+        const item = measurements[key];
+        const delta = Number(item.tgt) - Number(item.cur);
+        const deltaStr = delta > 0 ? `+${delta}` : `${delta}`;
+        const deltaColor = item.isCut ? (delta <= 0 ? 'text-emerald-400' : 'text-amber-400') : (delta >= 0 ? 'text-emerald-400' : 'text-amber-400');
+
+        return `
+          <div class="grid grid-cols-4 items-center gap-1 text-xs py-1.5 border-b border-slate-800/60">
+            <span class="text-slate-300 font-medium">${item.name}</span>
+            <input type="number" step="0.5" oninput="updateMeasurementLive('${key}', 'cur', this.value)" value="${item.cur}" class="bg-slate-900 border border-slate-700 rounded p-1 text-center text-xs text-white">
+            <input type="number" step="0.5" oninput="updateMeasurementLive('${key}', 'tgt', this.value)" value="${item.tgt}" class="bg-slate-900 border border-slate-700 rounded p-1 text-center text-xs text-amber-300 font-bold">
+            <span class="text-right font-bold ${deltaColor}" id="delta_${key}">${deltaStr} см</span>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="card card-glow mb-3">
+          <div class="flex justify-between items-center mb-1.5">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] font-bold text-sky-300 font-cinzel">ВЕС СЕГОДНЯ (КГ)</span>
+              <button onclick="document.getElementById('weightTipModal').classList.add('active')" class="text-amber-400 text-xs cursor-pointer">❓</button>
+            </div>
+            <span class="text-[10px] text-slate-400">Цель: ${userProfile.targetWeight.toFixed(1)} кг</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="number" id="weightInputBox" step="0.1" value="${userProfile.currentWeight}" class="w-28 bg-slate-900 border border-slate-700 rounded-lg py-1.5 px-3 text-lg font-black text-sky-300 text-center">
+            <button class="btn-gold flex-1 text-xs py-2" onclick="commitWeightEntry()">
+              Зафиксировать 📌
+            </button>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="flex justify-between text-[11px] font-bold text-sky-300 font-cinzel mb-2">
+            <span>ВЫБОР ЦЕЛИ И ПЛАНА</span>
+            <span class="text-amber-400 font-normal">Б: 2г · Ж: 1г</span>
+          </div>
+
+          <div onclick="selectGoalOption('cut')" class="p-2.5 rounded-lg mb-1.5 text-xs cursor-pointer border ${userProfile.currentGoal==='cut'?'border-amber-400 bg-sky-950/40':'border-slate-800 bg-slate-900 opacity-75'}">
+            <div class="flex justify-between font-bold text-red-400">
+              <span>🔻 Похудение (Сушка) ${userProfile.currentGoal==='cut'?'✓ АКТИВНО':''}</span><span>${cutTarget.kcal} ккал</span>
+            </div>
+            <div class="text-[10px] text-slate-400">Б: ${cutTarget.p}г · Ж: ${cutTarget.f}г · У: ${cutTarget.c}г</div>
+          </div>
+
+          <div onclick="selectGoalOption('maintain')" class="p-2.5 rounded-lg mb-1.5 text-xs cursor-pointer border ${userProfile.currentGoal==='maintain'?'border-amber-400 bg-sky-950/40':'border-slate-800 bg-slate-900 opacity-75'}">
+            <div class="flex justify-between font-bold text-sky-300">
+              <span>⚖️ Поддержание ${userProfile.currentGoal==='maintain'?'✓ АКТИВНО':''}</span><span>${maintainTarget.kcal} ккал</span>
+            </div>
+            <div class="text-[10px] text-slate-400">Б: ${maintainTarget.p}г · Ж: ${maintainTarget.f}г · У: ${maintainTarget.c}г</div>
+          </div>
+
+          <div onclick="selectGoalOption('bulk')" class="p-2.5 rounded-lg text-xs cursor-pointer border ${userProfile.currentGoal==='bulk'?'border-amber-400 bg-sky-950/40':'border-slate-800 bg-slate-900 opacity-75'}">
+            <div class="flex justify-between font-bold text-amber-300">
+              <span>🔺 Набор массы ${userProfile.currentGoal==='bulk'?'✓ АКТИВНО':''}</span><span>${bulkTarget.kcal} ккал</span>
+            </div>
+            <div class="text-[10px] text-slate-300">Б: ${bulkTarget.p}г · Ж: ${bulkTarget.f}г · У: ${bulkTarget.c}г</div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+            <span class="text-slate-300">Желаемый целевой вес:</span>
+            <div class="flex items-center gap-1">
+              <input type="number" step="0.5" id="targetWeightBox" value="${userProfile.targetWeight}" onchange="updateTargetWeight(this.value)" class="w-16 bg-slate-900 border border-slate-700 rounded p-1 text-center font-bold text-amber-300">
+              <span class="text-slate-400">кг</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div onclick="isMeasurementsOpen = !isMeasurementsOpen; render();" class="flex justify-between items-center cursor-pointer">
+            <div class="text-[11px] font-bold text-sky-300 font-cinzel">📏 ЗАМЕРЫ ТЕЛА (СМ)</div>
+            <div class="text-xs text-amber-400 font-semibold flex items-center gap-1">
+              <span>${isMeasurementsOpen ? 'Скрыть ▲' : 'Развернуть ▼'}</span>
+            </div>
+          </div>
+
+          ${isMeasurementsOpen ? `
+            <div class="mt-3 pt-2 border-t border-slate-800">
+              <div class="text-[10px] text-slate-400 grid grid-cols-4 pb-1 border-b border-slate-800 font-bold">
+                <span>Зона</span><span class="text-center">Сейчас</span><span class="text-center">Цель</span><span class="text-right">Дельта</span>
+              </div>
+              <div class="space-y-0.5 pt-1">
+                ${rowsHTML}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function updateMeasurementLive(key, type, val) {
+      if (measurements[key]) {
+        measurements[key][type] = Number(val) || 0;
+        const delta = Number(measurements[key].tgt) - Number(measurements[key].cur);
+        const deltaStr = delta > 0 ? `+${delta}` : `${delta}`;
+        const deltaEl = document.getElementById(`delta_${key}`);
+        if (deltaEl) {
+          deltaEl.innerText = `${deltaStr} см`;
+          const isCut = measurements[key].isCut;
+          const isGood = isCut ? delta <= 0 : delta >= 0;
+          deltaEl.className = `text-right font-bold ${isGood ? 'text-emerald-400' : 'text-amber-400'}`;
+        }
+      }
+    }
+
+    function commitWeightEntry() {
+      const box = document.getElementById('weightInputBox');
+      const val = Number(box ? box.value : userProfile.currentWeight) || userProfile.currentWeight;
+      userProfile.currentWeight = val;
+      
+      const todayStr = "Сегодня";
+      const existing = weightHistory.find(w => w.date === todayStr);
+      if (existing) {
+        existing.val = val;
+      } else {
+        weightHistory.push({ date: todayStr, val: val });
+        if (weightHistory.length > 7) weightHistory.shift();
+      }
+
+      showToast(`✅ Вес ${val.toFixed(1)} кг зафиксирован и отображен на графике!`);
+      render();
+    }
+
+    function selectGoalOption(newGoal) {
+      userProfile.currentGoal = newGoal;
+      const targetData = getGoalTargetData(newGoal);
+      showToast(`🎯 Цель: "${newGoal.toUpperCase()}". Питание пересчитано на ${targetData.kcal} ккал!`);
+      render();
+    }
+
+    function updateTargetWeight(val) {
+      userProfile.targetWeight = Number(val) || userProfile.targetWeight;
+      showToast(`🎯 Желаемый вес: ${userProfile.targetWeight} кг`);
+      render();
+    }
+
+    function toggleCalendar(open) {
+      const modal = document.getElementById('calendarModal');
+      modal.classList.toggle('active', open);
+      if (open) setupCalendar();
+    }
+
+    function setupCalendar() {
+      const container = document.getElementById('calendarDays');
+      let html = '';
+      const workoutDays = [2, 5, 8, 12, 15, 19, 22, 26, 29];
+
+      for (let day = 1; day <= 31; day++) {
+        const hasWorkout = workoutDays.includes(day);
+        const isSelected = (day === 22);
+        html += `
+          <div onclick="selectCalendarDay(${day})" class="p-1 rounded cursor-pointer ${isSelected ? 'bg-amber-400 text-black font-bold' : 'hover:bg-slate-800 text-slate-300'}">
+            <div>${day}</div>
+            <div class="flex justify-center h-1.5 mt-0.5">
+              ${hasWorkout ? '<span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>' : ''}
+            </div>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+      selectCalendarDay(22);
+    }
+
+    function selectCalendarDay(day) {
+      const workoutDays = [2, 5, 8, 12, 15, 19, 22, 26, 29];
+      const hasWorkout = workoutDays.includes(day);
+
+      document.getElementById('daySummaryContainer').innerHTML = `
+        <div class="card border-amber-500/40">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-amber-400">СВОДКА ЗА ${day} ОКТЯБРЯ</span>
+            <span class="text-[10px] text-slate-400">Неделя 6</span>
+          </div>
+
+          ${hasWorkout ? `
+            <div class="mb-2">
+              <div class="text-xs font-semibold text-orange-400 mb-1">🏋️ Тренировка (Силовая)</div>
+              <div class="text-xs space-y-1 text-slate-300 bg-slate-900/60 p-2 rounded">
+                <div class="flex justify-between"><span>Жим лёжа</span><span class="text-sky-300 font-bold">67×4×6 <span class="text-amber-400 font-normal">RPE 8</span></span></div>
+                <div class="flex justify-between"><span>Сведение в тренажёре</span><span class="text-sky-300 font-bold">40×8 <span class="text-amber-400 font-normal">RPE 7</span></span></div>
+              </div>
+            </div>
+          ` : `
+            <div class="text-xs text-slate-400 bg-slate-900/60 p-2 rounded mb-2">
+              День отдыха и восстановления мышц 🛡
+            </div>
+          `}
+
+          <div class="text-[11px] text-slate-300 flex justify-between pt-1 border-t border-slate-800">
+            <span>⚖️ Утренний вес:</span>
+            <span class="font-bold text-amber-400">67.2 кг</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // INIT
+    render();
+  </script>
+</body>
+</html>
