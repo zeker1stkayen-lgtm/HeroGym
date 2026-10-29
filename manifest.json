@@ -1,0 +1,20 @@
+{
+  "name": "HeroGym",
+  "short_name": "HeroGym",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/192/deadknight.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://img.icons8.com/color/512/deadknight.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -9,6 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="HeroGym">
   <meta name="theme-color" content="#0a0e1a">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/deadknight.png">
   
   <title>HeroGym</title>
   
@@ -562,12 +564,14 @@
 
         const barEl = document.getElementById('progressBarFill');
         if (barEl) barEl.style.width = `${Math.min(100, pct)}%`;
+        saveAllState();
       }
     }
 
     function addSnack() {
       const count = meals.filter(m => m.name.includes('Перекус')).length + 1;
       meals.push({ id: Date.now(), name: `🥪 Перекус ${count}`, p: 20, f: 10, c: 30 });
+      saveAllState();
       render();
     }
 
@@ -736,6 +740,7 @@
         workouts.unshift(editingWorkout);
         showToast("✅ Новая тренировка сохранена в журнал!");
       }
+      saveAllState();
       closeWorkoutModal();
       render();
     }
@@ -849,6 +854,7 @@
           const isGood = isCut ? delta <= 0 : delta >= 0;
           deltaEl.className = `text-right font-bold ${isGood ? 'text-emerald-400' : 'text-amber-400'}`;
         }
+        saveAllState();
       }
     }
 
@@ -866,19 +872,22 @@
         if (weightHistory.length > 7) weightHistory.shift();
       }
 
-      showToast(`✅ Вес ${val.toFixed(1)} кг зафиксирован и отображен на графике!`);
+      saveAllState();
+      showToast(`✅ Вес ${val.toFixed(1)} кг зафиксирован и сохранен локально!`);
       render();
     }
 
     function selectGoalOption(newGoal) {
       userProfile.currentGoal = newGoal;
       const targetData = getGoalTargetData(newGoal);
+      saveAllState();
       showToast(`🎯 Цель: "${newGoal.toUpperCase()}". Питание пересчитано на ${targetData.kcal} ккал!`);
       render();
     }
 
     function updateTargetWeight(val) {
       userProfile.targetWeight = Number(val) || userProfile.targetWeight;
+      saveAllState();
       showToast(`🎯 Желаемый вес: ${userProfile.targetWeight} кг`);
       render();
     }
@@ -943,7 +952,43 @@
       `;
     }
 
+    // PERSISTENCE (LocalStorage)
+    function saveAllState() {
+      try {
+        localStorage.setItem('herogym_profile', JSON.stringify(userProfile));
+        localStorage.setItem('herogym_weights', JSON.stringify(weightHistory));
+        localStorage.setItem('herogym_measurements', JSON.stringify(measurements));
+        localStorage.setItem('herogym_workouts', JSON.stringify(workouts));
+        localStorage.setItem('herogym_meals', JSON.stringify(meals));
+      } catch (e) { console.error('LocalStorage save error:', e); }
+    }
+
+    function loadAllState() {
+      try {
+        const p = localStorage.getItem('herogym_profile');
+        if (p) userProfile = JSON.parse(p);
+        const w = localStorage.getItem('herogym_weights');
+        if (w) weightHistory = JSON.parse(w);
+        const m = localStorage.getItem('herogym_measurements');
+        if (m) measurements = JSON.parse(m);
+        const wo = localStorage.getItem('herogym_workouts');
+        if (wo) workouts = JSON.parse(wo);
+        const ml = localStorage.getItem('herogym_meals');
+        if (ml) meals = JSON.parse(ml);
+      } catch (e) { console.error('LocalStorage load error:', e); }
+    }
+
+    // Register Service Worker for 100% Offline / Airplane Mode
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Offline Service Worker registered!'))
+          .catch(err => console.log('Service Worker registration error:', err));
+      });
+    }
+
     // INIT
+    loadAllState();
     render();
   </script>
 </body>
