@@ -1,5 +1,5 @@
 // HeroGym Offline Service Worker
-const CACHE_NAME = 'herogym-offline-v3';
+const CACHE_NAME = 'herogym-offline-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
