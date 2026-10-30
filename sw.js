@@ -1,5 +1,5 @@
 // HeroGym Offline Service Worker v7 (Network-First for HTML, Stale-While-Revalidate for Assets)
-const CACHE_NAME = 'herogym-offline-v7';
+const CACHE_NAME = 'herogym-offline-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -35,16 +35,31 @@
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg-deep);
+      background: #030712;
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
       overflow-x: hidden;
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
       font-size: 1rem;
       line-height: 1.5;
+    }
+
+    /* Dedicated Phone Shell Container */
+    .app-shell {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100vh;
+      background: var(--bg-deep);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.9), 0 0 15px rgba(56, 189, 248, 0.15);
+      border-left: 1px solid rgba(30, 58, 95, 0.4);
+      border-right: 1px solid rgba(30, 58, 95, 0.4);
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     .font-cinzel { font-family: 'Cinzel', serif; }
@@ -72,9 +87,7 @@
     .tabbar {
       position: fixed;
       bottom: 0;
-      left: 0;
-      right: 0;
-      height: calc(68px + env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; height: calc(68px + env(safe-area-inset-bottom));
       padding-bottom: env(safe-area-inset-bottom);
       background: rgba(13, 19, 34, 0.96);
       border-top: 1px solid var(--border);
@@ -135,7 +148,7 @@
 
     .overlay-modal {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; bottom: 0;
       background: rgba(10, 14, 26, 0.98);
       z-index: 50;
       padding: 16px;
@@ -150,8 +163,7 @@
     .toast-msg {
       position: fixed;
       top: calc(50px + env(safe-area-inset-top));
-      left: 20px;
-      right: 20px;
+      left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 390px;
       background: rgba(16, 185, 129, 0.95);
       color: #000;
       font-weight: bold;
@@ -182,13 +194,14 @@
   </style>
 </head>
 <body>
+  <div class="app-shell">
 
   <div class="toast-msg" id="toastMsg"></div>
 
   <!-- Header -->
   <div class="header-bar" id="appHeader">
     <div class="flex items-center gap-2">
-      <span class="text-sm font-bold text-amber-400 font-cinzel">⚔️ HERO GYM <span class="text-[10px] text-sky-400 font-sans font-normal border border-sky-500/40 px-1.5 py-0.5 rounded ml-1">v3.1</span></span>
+      <span class="text-sm font-bold text-amber-400 font-cinzel">⚔️ HERO GYM <span class="text-[10px] text-sky-400 font-sans font-normal border border-sky-500/40 px-1.5 py-0.5 rounded ml-1">v3.2</span></span>
     </div>
     <div class="flex items-center gap-1.5">
       <button onclick="forceAppRefresh()" title="Обновить приложение" class="text-xs bg-slate-800 text-slate-300 hover:text-amber-300 px-2 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
@@ -310,23 +323,25 @@
   <div class="overlay-modal" id="calendarModal">
     <div class="flex justify-between items-center mb-3">
       <div class="font-cinzel text-amber-400 font-bold text-sm">📅 ЛЕТОПИСЬ ТРЕНИРОВОК</div>
-      <button onclick="toggleCalendar(false)" class="text-slate-400 hover:text-white text-xl p-1">✕</button>
+      <div class="flex items-center gap-2">
+        <button onclick="goToCurrentMonth()" class="text-[11px] bg-amber-500/15 text-amber-400 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold cursor-pointer hover:bg-amber-500/25">Сегодня</button>
+        <button onclick="toggleCalendar(false)" class="text-slate-400 hover:text-white text-xl p-1 cursor-pointer">✕</button>
+      </div>
     </div>
 
     <!-- Month & Year Switcher -->
     <div class="card card-glow mb-3">
-      <div class="flex items-center justify-between gap-1.5 mb-3">
-        <button onclick="changeMonth(-1)" class="text-sky-300 px-2.5 py-1.5 bg-slate-800 rounded-lg border border-slate-700 font-bold text-sm hover:bg-slate-700 cursor-pointer">‹</button>
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <button onclick="changeMonth(-1)" class="w-9 h-8 flex items-center justify-center text-sky-300 bg-slate-800 rounded-lg border border-slate-700 font-bold text-base hover:bg-slate-700 cursor-pointer">‹</button>
         
-        <div class="flex items-center gap-1.5 flex-1 justify-center">
-          <select id="calendarMonthSelect" onchange="onMonthSelectChange(this.value)" class="bg-slate-900 border border-slate-700 text-amber-400 font-bold text-xs rounded-lg py-1.5 px-2 focus:border-amber-400 outline-none cursor-pointer">
+        <div class="flex items-center gap-2 flex-1 justify-center">
+          <select id="calendarMonthSelect" onchange="onMonthSelectChange(this.value)" class="bg-slate-900 border border-slate-700 text-amber-400 font-bold text-xs rounded-lg py-1.5 px-2.5 focus:border-amber-400 outline-none cursor-pointer">
           </select>
           <select id="calendarYearSelect" onchange="onYearSelectChange(this.value)" class="bg-slate-900 border border-slate-700 text-amber-400 font-bold text-xs rounded-lg py-1.5 px-2 focus:border-amber-400 outline-none cursor-pointer">
           </select>
         </div>
 
-        <button onclick="changeMonth(1)" class="text-sky-300 px-2.5 py-1.5 bg-slate-800 rounded-lg border border-slate-700 font-bold text-sm hover:bg-slate-700 cursor-pointer">›</button>
-        <button onclick="goToCurrentMonth()" class="text-[11px] bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-1.5 rounded-lg font-semibold cursor-pointer hover:bg-amber-500/20">Сегодня</button>
+        <button onclick="changeMonth(1)" class="w-9 h-8 flex items-center justify-center text-sky-300 bg-slate-800 rounded-lg border border-slate-700 font-bold text-base hover:bg-slate-700 cursor-pointer">›</button>
       </div>
       <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400 mb-1">
         <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
@@ -1523,5 +1538,6 @@
     checkOnboarding();
     render();
   </script>
+  </div>
 </body>
 </html>
