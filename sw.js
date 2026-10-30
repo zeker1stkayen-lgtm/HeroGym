@@ -1,8 +1,9 @@
-// HeroGym Offline Service Worker
-const CACHE_NAME = 'herogym-offline-v4';
+// HeroGym Offline Service Worker v5 (Network-First Strategy for Instant Updates)
+const CACHE_NAME = 'herogym-offline-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './manifest.json',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap'
 ];
@@ -10,7 +11,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Caching offline assets for HeroGym...');
+      console.log('[SW] Pre-caching offline assets...');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -29,12 +30,37 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // Возвращаем из кэша, если интернета нет
-      return cachedResponse || fetch(event.request).catch(() => {
-        return caches.match('./index.html');
-      });
-    })
-  );
+  const req = event.request;
+  const isHtml = req.mode === 'navigate' || req.headers.get('accept')?.includes('text/html') || req.url.endsWith('index.html') || req.url.endsWith('/');
+
+  if (isHtml) {
+    // Network-First for HTML so user always gets the latest deployed version!
+    event.respondWith(
+      fetch(req)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, responseClone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          console.log('[SW] Network failed, serving cached HTML');
+          return caches.match(req).then((cached) => cached || caches.match('./index.html'));
+        })
+    );
+  } else {
+    // Cache-First for static assets, fallback to network
+    event.respondWith(
+      caches.match(req).then((cachedResponse) => {
+        return cachedResponse || fetch(req).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && req.method === 'GET') {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, responseClone));
+          }
+          return networkResponse;
+        });
+      })
+    );
+  }
 });

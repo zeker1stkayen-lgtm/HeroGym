@@ -188,12 +188,17 @@
   <!-- Header -->
   <div class="header-bar">
     <div class="flex items-center gap-2">
-      <span class="text-sm font-bold text-amber-400 font-cinzel">⚔️ HERO GYM</span>
+      <span class="text-sm font-bold text-amber-400 font-cinzel">⚔️ HERO GYM <span class="text-[10px] text-sky-400 font-sans font-normal border border-sky-500/40 px-1.5 py-0.5 rounded ml-1">v2.1</span></span>
     </div>
-    <button onclick="toggleCalendar(true)" class="flex items-center gap-1.5 text-xs bg-slate-800 text-sky-400 px-3 py-1.5 rounded-lg border border-sky-500/40 cursor-pointer">
-      <span>📅</span>
-      <span class="font-semibold">Летопись</span>
-    </button>
+    <div class="flex items-center gap-1.5">
+      <button onclick="forceAppRefresh()" title="Обновить приложение" class="text-xs bg-slate-800 text-slate-300 hover:text-amber-300 px-2 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
+        🔄
+      </button>
+      <button onclick="toggleCalendar(true)" class="flex items-center gap-1.5 text-xs bg-slate-800 text-sky-400 px-3 py-1.5 rounded-lg border border-sky-500/40 cursor-pointer">
+        <span>📅</span>
+        <span class="font-semibold">Летопись</span>
+      </button>
+    </div>
   </div>
 
   <!-- Main Content -->
@@ -1393,24 +1398,73 @@
     function loadAllState() {
       try {
         const p = localStorage.getItem('herogym_profile');
-        if (p) userProfile = JSON.parse(p);
+        if (p) {
+          const parsed = JSON.parse(p);
+          userProfile = { ...userProfile, ...parsed };
+          // Авто-миграция со старого хардкода
+          if (!userProfile.level || userProfile.level === 7) {
+            userProfile.level = 1;
+            userProfile.xp = 0;
+          }
+        }
         const w = localStorage.getItem('herogym_weights');
         if (w) weightHistory = JSON.parse(w);
         const m = localStorage.getItem('herogym_measurements');
         if (m) measurements = JSON.parse(m);
         const wo = localStorage.getItem('herogym_workouts');
         if (wo) workouts = JSON.parse(wo);
+        
         const ml = localStorage.getItem('herogym_meals_by_date');
-        if (ml) mealsByDate = JSON.parse(ml);
+        if (ml) {
+          mealsByDate = JSON.parse(ml);
+        } else {
+          // Миграция старых приемов пищи
+          const oldMeals = localStorage.getItem('herogym_meals');
+          if (oldMeals) {
+            mealsByDate[getTodayKey()] = JSON.parse(oldMeals);
+          }
+        }
       } catch (e) { console.error('LocalStorage load error:', e); }
     }
 
-    // Service Worker
+    async function forceAppRefresh() {
+      showToast("🔄 Очищаем кэш и загружаем обновление...");
+      if ('caches' in window) {
+        try {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        } catch(e) {}
+      }
+      if ('serviceWorker' in navigator) {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (let r of regs) { await r.unregister(); }
+        } catch(e) {}
+      }
+      setTimeout(() => {
+        window.location.reload(true);
+      }, 500);
+    }
+
+    // Service Worker Registration with Auto-Update Check
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Offline Service Worker registered!'))
-          .catch(err => console.log('Service Worker registration error:', err));
+        navigator.serviceWorker.register('./sw.js?t=' + Date.now())
+          .then(reg => {
+            console.log('[SW] Service Worker v5 registered!');
+            reg.update();
+            reg.onupdatefound = () => {
+              const installing = reg.installing;
+              if (installing) {
+                installing.onstatechange = () => {
+                  if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                    showToast("⚡️ Доступна новая версия! Нажмите 🔄 вверху для обновления.");
+                  }
+                };
+              }
+            };
+          })
+          .catch(err => console.log('[SW] Registration error:', err));
       });
     }
 
