@@ -1,5 +1,5 @@
-// HeroGym Offline Service Worker v5 (Network-First Strategy for Instant Updates)
-const CACHE_NAME = 'herogym-offline-v5';
+// HeroGym Offline Service Worker v6 (Network-First for HTML, Stale-While-Revalidate for Assets)
+const CACHE_NAME = 'herogym-offline-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -11,7 +11,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Pre-caching offline assets...');
+      console.log('[SW v6] Pre-caching offline assets...');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          console.log('[SW] Network failed, serving cached HTML');
+          console.log('[SW v6] Network failed, serving cached HTML');
           return caches.match(req).then((cached) => cached || caches.match('./index.html'));
         })
     );

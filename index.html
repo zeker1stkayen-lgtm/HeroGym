@@ -186,9 +186,9 @@
   <div class="toast-msg" id="toastMsg"></div>
 
   <!-- Header -->
-  <div class="header-bar">
+  <div class="header-bar" id="appHeader">
     <div class="flex items-center gap-2">
-      <span class="text-sm font-bold text-amber-400 font-cinzel">⚔️ HERO GYM <span class="text-[10px] text-sky-400 font-sans font-normal border border-sky-500/40 px-1.5 py-0.5 rounded ml-1">v2.1</span></span>
+      <span class="text-sm font-bold text-amber-400 font-cinzel">⚔️ HERO GYM <span class="text-[10px] text-sky-400 font-sans font-normal border border-sky-500/40 px-1.5 py-0.5 rounded ml-1">v3.0</span></span>
     </div>
     <div class="flex items-center gap-1.5">
       <button onclick="forceAppRefresh()" title="Обновить приложение" class="text-xs bg-slate-800 text-slate-300 hover:text-amber-300 px-2 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
@@ -205,7 +205,7 @@
   <div class="main-content" id="mainScreen"></div>
 
   <!-- TabBar -->
-  <div class="tabbar">
+  <div class="tabbar" id="appTabBar">
     <div class="tab-btn active" onclick="switchTab('character')">
       <span class="text-xl">🧙</span>
       <span class="text-xs font-bold">Персонаж</span>
@@ -224,54 +224,58 @@
     </div>
   </div>
 
-  <!-- Modal: Onboarding -->
-  <div class="overlay-modal" id="onboardingModal">
-    <div class="max-w-md mx-auto w-full my-auto py-4">
-      <div class="text-center mb-4">
-        <div class="text-2xl mb-1">⚔️</div>
-        <h2 class="text-lg font-bold font-cinzel text-amber-400">СОЗДАНИЕ ГЕРОЯ</h2>
-        <p class="text-xs text-slate-400">Начни свой путь в Нордсколе с 1 уровня и стань легендой</p>
+  <!-- Screen: Character Creation / Onboarding (Fullscreen) -->
+  <div class="overlay-modal" id="onboardingScreen">
+    <div class="max-w-md mx-auto w-full my-auto py-2">
+      <div class="text-center mb-3">
+        <div class="text-3xl mb-1">⚔️</div>
+        <h1 class="text-xl font-black font-cinzel text-amber-400">СОЗДАНИЕ ГЕРОЯ</h1>
+        <p class="text-xs text-slate-400 mt-1">Введи свои реальные данные. Норма калорий и прогресс будут рассчитаны строго для тебя.</p>
       </div>
 
       <div class="card card-glow space-y-3">
+        <!-- Name -->
         <div>
           <label class="text-xs text-slate-300 font-semibold block mb-1">Имя твоего героя</label>
-          <input type="text" id="obName" value="Юсуп" placeholder="Напр. Артас" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white font-bold">
+          <input type="text" id="obName" placeholder="Введи своё имя..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white font-bold focus:border-amber-400 outline-none">
         </div>
 
+        <!-- Gender & Age -->
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="text-xs text-slate-300 font-semibold block mb-1">Пол персонажа</label>
-            <select id="obGender" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+            <label class="text-xs text-slate-300 font-semibold block mb-1">Пол</label>
+            <select id="obGender" onchange="previewOnboardingCalories()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-amber-400 outline-none">
               <option value="male">🧔 Парень (Воин)</option>
               <option value="female">👩 Девушка (Валькирия)</option>
             </select>
           </div>
           <div>
             <label class="text-xs text-slate-300 font-semibold block mb-1">Возраст (лет)</label>
-            <input type="number" id="obAge" value="25" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+            <input type="number" id="obAge" placeholder="25" oninput="previewOnboardingCalories()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white text-center focus:border-amber-400 outline-none">
           </div>
         </div>
 
+        <!-- Height & Current Weight -->
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-xs text-slate-300 font-semibold block mb-1">Рост (см)</label>
-            <input type="number" id="obHeight" value="177" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+            <input type="number" id="obHeight" placeholder="175" oninput="previewOnboardingCalories()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white text-center focus:border-amber-400 outline-none">
           </div>
           <div>
             <label class="text-xs text-slate-300 font-semibold block mb-1">Текущий вес (кг)</label>
-            <input type="number" step="0.1" id="obCurrentWeight" value="67.0" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+            <input type="number" step="0.1" id="obCurrentWeight" placeholder="70.0" oninput="previewOnboardingCalories()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white text-center focus:border-amber-400 outline-none font-bold text-sky-300">
           </div>
         </div>
 
+        <!-- Target Weight & Goal -->
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="text-xs text-slate-300 font-semibold block mb-1">Целевой вес (кг)</label>
-            <input type="number" step="0.1" id="obTargetWeight" value="72.0" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+            <label class="text-xs text-slate-300 font-semibold block mb-1">Желаемый вес (кг)</label>
+            <input type="number" step="0.1" id="obTargetWeight" placeholder="75.0" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white text-center focus:border-amber-400 outline-none font-bold text-amber-300">
           </div>
           <div>
-            <label class="text-xs text-slate-300 font-semibold block mb-1">Цель тренировок</label>
-            <select id="obGoal" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white">
+            <label class="text-xs text-slate-300 font-semibold block mb-1">Твоя цель</label>
+            <select id="obGoal" onchange="previewOnboardingCalories()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-amber-400 outline-none">
               <option value="bulk">🔺 Набор массы</option>
               <option value="maintain">⚖️ Поддержание</option>
               <option value="cut">🔻 Похудение (Сушка)</option>
@@ -279,8 +283,15 @@
           </div>
         </div>
 
-        <button onclick="finishOnboarding()" class="btn-gold w-full py-3 text-sm mt-3">
-          Вступить в бой (1 Уровень) ⚔️
+        <!-- Live Calculation Preview -->
+        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-xs" id="obPreviewBox">
+          <div class="text-slate-400 text-[11px] mb-1">Предварительный расчет Mifflin-St Jeor:</div>
+          <div class="text-amber-400 font-bold text-sm" id="obKcalPreview">Заполни параметры выше</div>
+          <div class="text-[10px] text-slate-400" id="obMacrosPreview">Белки: 2г/кг · Жиры: 1г/кг</div>
+        </div>
+
+        <button onclick="finishOnboarding()" class="btn-gold w-full py-3 text-sm mt-2">
+          ⚔️ Начать путь героя (1 Уровень)
         </button>
       </div>
     </div>
@@ -305,9 +316,9 @@
     <!-- Month Switcher -->
     <div class="card card-glow mb-3">
       <div class="flex justify-between items-center mb-3">
-        <button onclick="changeMonth(-1)" class="text-sky-300 px-3 py-1 bg-slate-800 rounded border border-slate-700 font-bold text-sm hover:bg-slate-700">‹ Пред</button>
+        <button onclick="changeMonth(-1)" class="text-sky-300 px-3 py-1 bg-slate-800 rounded border border-slate-700 font-bold text-sm hover:bg-slate-700 cursor-pointer">‹ Пред</button>
         <div class="text-xs font-bold text-amber-400 font-cinzel" id="calendarMonthTitle">ОКТЯБРЬ 2026</div>
-        <button onclick="changeMonth(1)" class="text-sky-300 px-3 py-1 bg-slate-800 rounded border border-slate-700 font-bold text-sm hover:bg-slate-700">След ›</button>
+        <button onclick="changeMonth(1)" class="text-sky-300 px-3 py-1 bg-slate-800 rounded border border-slate-700 font-bold text-sm hover:bg-slate-700 cursor-pointer">След ›</button>
       </div>
       <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400 mb-1">
         <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
@@ -340,76 +351,27 @@
   </div>
 
   <script>
-    // State
-    let userProfile = {
-      name: "Юсуп",
-      gender: "male",
-      age: 25,
-      height: 177,
-      currentWeight: 67.0,
-      targetWeight: 72.0,
-      currentGoal: "bulk",
-      level: 1,
-      xp: 0,
-      isConfigured: false
-    };
-
-    let weightHistory = [
-      { date: "24 окт", val: 66.4 },
-      { date: "25 окт", val: 66.7 },
-      { date: "26 окт", val: 66.5 },
-      { date: "27 окт", val: 66.9 },
-      { date: "28 окт", val: 66.8 },
-      { date: "Сегодня", val: 67.0 }
-    ];
+    // State: Clean Zero State by Default!
+    let userProfile = null;
+    let weightHistory = [];
+    let workouts = [];
+    let mealsByDate = {};
 
     let measurements = {
-      chest: { name: 'Грудь', cur: 98, tgt: 105, isCut: false },
-      waist: { name: 'Талия', cur: 82, tgt: 78, isCut: true },
-      arms: { name: 'Рука/Бицепс', cur: 36, tgt: 40, isCut: false },
-      glutes: { name: 'Ягодицы', cur: 96, tgt: 98, isCut: false },
-      hips: { name: 'Бедро', cur: 56, tgt: 60, isCut: false },
-      calves: { name: 'Икра', cur: 37, tgt: 39, isCut: false }
+      chest: { name: 'Грудь', cur: 0, tgt: 0, isCut: false },
+      waist: { name: 'Талия', cur: 0, tgt: 0, isCut: true },
+      arms: { name: 'Рука/Бицепс', cur: 0, tgt: 0, isCut: false },
+      glutes: { name: 'Ягодицы', cur: 0, tgt: 0, isCut: false },
+      hips: { name: 'Бедро', cur: 0, tgt: 0, isCut: false },
+      calves: { name: 'Икра', cur: 0, tgt: 0, isCut: false }
     };
     let isMeasurementsOpen = false;
 
-    let workouts = [
-      {
-        id: "w1",
-        date: "2026-10-29",
-        dateFormatted: "29.10.2026",
-        weekText: "Неделя 7",
-        type: "strength",
-        exercises: [
-          { name: "Жим лёжа", weight: 67, reps: 4, sets: 6, rpe: 8, muscle: "chest" },
-          { name: "Сведение в тренажёре", weight: 40, reps: 8, sets: 1, rpe: 7, muscle: "chest" }
-        ]
-      },
-      {
-        id: "w2",
-        date: "2026-10-27",
-        dateFormatted: "27.10.2026",
-        weekText: "Неделя 7",
-        type: "strength",
-        exercises: [
-          { name: "Подъём штанги на бицепс", weight: 35, reps: 10, sets: 4, rpe: 8, muscle: "arms" },
-          { name: "Скручивания на пресс", weight: 0, reps: 20, sets: 3, rpe: 7, muscle: "abs" }
-        ]
-      }
-    ];
-
     let selectedNutritionDate = getTodayKey();
-    let mealsByDate = {
-      [getTodayKey()]: [
-        { id: 1, name: '🍳 Завтрак', p: 40, f: 20, c: 80 },
-        { id: 2, name: '🍲 Обед', p: 50, f: 25, c: 110 },
-        { id: 3, name: '🥩 Ужин', p: 45, f: 22, c: 90 }
-      ]
-    };
-
-    let calendarYear = 2026;
-    let calendarMonth = 9; // 9 = October
-    let selectedCalendarDay = new Date().getDate();
+    const today = new Date();
+    let calendarYear = today.getFullYear();
+    let calendarMonth = today.getMonth(); // 0-indexed
+    let selectedCalendarDay = today.getDate();
 
     let editingWorkout = null;
     let activeTab = 'character';
@@ -422,9 +384,9 @@
     function getMealsForSelectedDate() {
       if (!mealsByDate[selectedNutritionDate]) {
         mealsByDate[selectedNutritionDate] = [
-          { id: Date.now()+1, name: '🍳 Завтрак', p: 0, f: 0, c: 0 },
-          { id: Date.now()+2, name: '🍲 Обед', p: 0, f: 0, c: 0 },
-          { id: Date.now()+3, name: '🥩 Ужин', p: 0, f: 0, c: 0 }
+          { id: Date.now() + 1, name: '🍳 Завтрак', p: 0, f: 0, c: 0 },
+          { id: Date.now() + 2, name: '🍲 Обед', p: 0, f: 0, c: 0 },
+          { id: Date.now() + 3, name: '🥩 Ужин', p: 0, f: 0, c: 0 }
         ];
       }
       return mealsByDate[selectedNutritionDate];
@@ -432,7 +394,9 @@
 
     // Honest Mifflin-St Jeor Formula
     function getGoalTargetData(goal) {
-      const g = goal || userProfile.currentGoal;
+      if (!userProfile) return { goal: 'bulk', tdee: 2000, kcal: 2300, p: 140, f: 70, c: 275 };
+
+      const g = goal || userProfile.currentGoal || 'bulk';
       const w = Number(userProfile.currentWeight) || 70;
       const h = Number(userProfile.height) || 175;
       const age = Number(userProfile.age) || 25;
@@ -462,6 +426,7 @@
     }
 
     function addXP(amount, reason) {
+      if (!userProfile) return;
       userProfile.xp = (userProfile.xp || 0) + amount;
       let leveledUp = false;
 
@@ -481,19 +446,56 @@
       render();
     }
 
+    // Onboarding Handling
     function checkOnboarding() {
-      if (!userProfile.isConfigured) {
-        document.getElementById('onboardingModal').classList.add('active');
+      const modal = document.getElementById('onboardingScreen');
+      if (!userProfile || !userProfile.isConfigured) {
+        modal.classList.add('active');
+        document.getElementById('appHeader').style.display = 'none';
+        document.getElementById('appTabBar').style.display = 'none';
+        previewOnboardingCalories();
+      } else {
+        modal.classList.remove('active');
+        document.getElementById('appHeader').style.display = 'flex';
+        document.getElementById('appTabBar').style.display = 'flex';
       }
     }
 
+    function previewOnboardingCalories() {
+      const w = Number(document.getElementById('obCurrentWeight')?.value) || 70;
+      const h = Number(document.getElementById('obHeight')?.value) || 175;
+      const age = Number(document.getElementById('obAge')?.value) || 25;
+      const gender = document.getElementById('obGender')?.value || 'male';
+      const goal = document.getElementById('obGoal')?.value || 'bulk';
+
+      const bmr = (10 * w) + (6.25 * h) - (5 * age) + (gender === 'male' ? 5 : -161);
+      const tdee = Math.round(bmr * 1.375);
+      let kcal = tdee;
+      if (goal === 'cut') kcal = Math.max(1200, tdee - 400);
+      if (goal === 'bulk') kcal = tdee + 350;
+
+      const p = Math.round(w * 2.0);
+      const f = Math.round(w * 1.0);
+      const c = Math.max(0, Math.round((kcal - p * 4 - f * 9) / 4));
+
+      const kcalEl = document.getElementById('obKcalPreview');
+      const macrosEl = document.getElementById('obMacrosPreview');
+      if (kcalEl) kcalEl.innerText = `${kcal} ккал/день`;
+      if (macrosEl) macrosEl.innerText = `Белки: ${p}г · Жиры: ${f}г · Углеводы: ${c}г`;
+    }
+
     function finishOnboarding() {
-      const name = document.getElementById('obName').value.trim() || "Герой";
+      const name = document.getElementById('obName').value.trim();
+      if (!name) {
+        showToast("⚠️ Пожалуйста, введи имя своего героя!");
+        return;
+      }
+
       const gender = document.getElementById('obGender').value || "male";
       const age = Number(document.getElementById('obAge').value) || 25;
-      const height = Number(document.getElementById('obHeight').value) || 177;
-      const curW = Number(document.getElementById('obCurrentWeight').value) || 67.0;
-      const tgtW = Number(document.getElementById('obTargetWeight').value) || 72.0;
+      const height = Number(document.getElementById('obHeight').value) || 175;
+      const curW = Number(document.getElementById('obCurrentWeight').value) || 70.0;
+      const tgtW = Number(document.getElementById('obTargetWeight').value) || (curW + 5.0);
       const goal = document.getElementById('obGoal').value || "bulk";
 
       userProfile = {
@@ -510,10 +512,21 @@
       };
 
       weightHistory = [{ date: "Сегодня", val: curW }];
+      workouts = [];
+      mealsByDate = {};
+      mealsByDate[getTodayKey()] = [
+        { id: 1, name: '🍳 Завтрак', p: 0, f: 0, c: 0 },
+        { id: 2, name: '🍲 Обед', p: 0, f: 0, c: 0 },
+        { id: 3, name: '🥩 Ужин', p: 0, f: 0, c: 0 }
+      ];
+
       saveAllState();
 
-      document.getElementById('onboardingModal').classList.remove('active');
-      showToast(`⚔️ Добро пожаловать, ${name}! Начало пути с 1 уровня.`);
+      document.getElementById('onboardingScreen').classList.remove('active');
+      document.getElementById('appHeader').style.display = 'flex';
+      document.getElementById('appTabBar').style.display = 'flex';
+
+      showToast(`⚔️ Добро пожаловать, ${name}! Твой путь начался с 1 уровня.`);
       render();
     }
 
@@ -550,6 +563,10 @@
     }
 
     function render() {
+      if (!userProfile || !userProfile.isConfigured) {
+        checkOnboarding();
+        return;
+      }
       const container = document.getElementById('mainScreen');
       if (activeTab === 'character') container.innerHTML = getCharacterHTML();
       else if (activeTab === 'nutrition') container.innerHTML = getNutritionHTML();
@@ -603,14 +620,14 @@
           </div>
           ${renderMannequinHTML()}
           <div class="text-[11px] text-slate-300 bg-slate-900/60 p-2 rounded border border-slate-800 mt-2" id="mannequinTip">
-            Тапни по мышце, чтобы узнать статус тренированности!
+            ${workouts.length === 0 ? 'Мышцы пока отдыхают. Запиши первую тренировку, чтобы зажечь сияние!' : 'Тапни по мышце, чтобы узнать статус тренированности!'}
           </div>
         </div>
 
         <!-- Nutrition Target Card -->
         <div class="card mb-3 space-y-2">
           <div class="flex justify-between items-center text-xs">
-            <span class="text-slate-300 font-semibold">🎯 Норма по Mifflin-St Jeor:</span>
+            <span class="text-slate-300 font-semibold">🎯 Твой план по Mifflin-St Jeor:</span>
             <span class="text-amber-400 font-bold">${currentGoalData.kcal} ккал/день</span>
           </div>
           <div class="flex justify-between text-[11px] text-slate-400 bg-slate-900/60 p-2 rounded">
@@ -634,7 +651,7 @@
     function renderMannequinHTML() {
       const trainedMuscles = new Set();
       workouts.forEach(w => {
-        w.exercises.forEach(ex => {
+        (w.exercises || []).forEach(ex => {
           const n = (ex.name || '').toLowerCase();
           if (n.includes('жим') || n.includes('груд') || n.includes('сведен')) trainedMuscles.add('chest');
           if (n.includes('бицепс') || n.includes('трицепс') || n.includes('рук') || n.includes('гантел')) trainedMuscles.add('arms');
@@ -718,36 +735,36 @@
       return `<div class="flex items-end justify-between gap-1 pt-1">${bars}</div>`;
     }
 
-    // 2. NUTRITION SCREEN (No duplicate inputs!)
+    // 2. NUTRITION SCREEN
     function getNutritionHTML() {
       const totals = calculateTotalCaloriesForDate();
       const goalTarget = getGoalTargetData(userProfile.currentGoal);
       const pct = Math.min(150, Math.round((totals.kcal / goalTarget.kcal) * 100));
       const currentMeals = getMealsForSelectedDate();
 
-      let mealsHTML = currentMeals.map((m, idx) => `
+      let mealsHTML = currentMeals.map((m) => `
         <div class="card mb-2">
           <div class="flex justify-between items-center text-xs mb-2">
             <span class="font-bold text-white">${m.name}</span>
             <div class="flex items-center gap-2">
               <span class="text-sky-300 font-semibold" id="mealKcal_${m.id}">${Math.round((m.p*4)+(m.f*9)+(m.c*4))} ккал</span>
               ${m.name.includes('Перекус') ? `
-                <button onclick="deleteMeal(${m.id})" class="text-red-400 hover:text-red-300 text-xs px-1.5 py-0.5 rounded bg-red-950/40 border border-red-500/30">✕</button>
+                <button onclick="deleteMeal(${m.id})" class="text-red-400 hover:text-red-300 text-xs px-1.5 py-0.5 rounded bg-red-950/40 border border-red-500/30 cursor-pointer">✕</button>
               ` : ''}
             </div>
           </div>
           <div class="grid grid-cols-3 gap-2">
             <div>
               <div class="text-[9px] text-red-400 mb-0.5">Белки (г)</div>
-              <input type="number" oninput="onMealInputWithoutBlur(${m.id}, 'p', this.value)" value="${m.p}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-xs text-white">
+              <input type="number" oninput="onMealInputWithoutBlur(${m.id}, 'p', this.value)" value="${m.p || ''}" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-xs text-white">
             </div>
             <div>
               <div class="text-[9px] text-amber-400 mb-0.5">Жиры (г)</div>
-              <input type="number" oninput="onMealInputWithoutBlur(${m.id}, 'f', this.value)" value="${m.f}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-xs text-white">
+              <input type="number" oninput="onMealInputWithoutBlur(${m.id}, 'f', this.value)" value="${m.f || ''}" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-xs text-white">
             </div>
             <div>
               <div class="text-[9px] text-sky-400 mb-0.5">Углеводы (г)</div>
-              <input type="number" oninput="onMealInputWithoutBlur(${m.id}, 'c', this.value)" value="${m.c}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-xs text-white">
+              <input type="number" oninput="onMealInputWithoutBlur(${m.id}, 'c', this.value)" value="${m.c || ''}" placeholder="0" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-xs text-white">
             </div>
           </div>
         </div>
@@ -776,7 +793,7 @@
             </div>
             <div class="text-right">
               <div class="text-sm font-bold ${pct >= 90 && pct <= 110 ? 'text-emerald-400' : 'text-amber-400'}" id="pctDisplay">${pct}%</div>
-              <div class="text-[9px] text-slate-400" id="pctStatus">${pct >= 90 && pct <= 110 ? 'В норме ✅' : 'Корректируй'}</div>
+              <div class="text-[9px] text-slate-400" id="pctStatus">${pct >= 90 && pct <= 110 ? 'В норме ✅' : 'В процессе'}</div>
             </div>
           </div>
           <div class="w-full bg-slate-800 h-2 rounded overflow-hidden border border-slate-700 mb-2">
@@ -864,7 +881,7 @@
     function addSnack() {
       const currentMeals = getMealsForSelectedDate();
       const count = currentMeals.filter(m => m.name.includes('Перекус')).length + 1;
-      currentMeals.push({ id: Date.now(), name: `🥪 Перекус ${count}`, p: 15, f: 8, c: 25 });
+      currentMeals.push({ id: Date.now(), name: `🥪 Перекус ${count}`, p: 0, f: 0, c: 0 });
       saveAllState();
       render();
     }
@@ -887,7 +904,7 @@
     // 3. WORKOUTS SCREEN
     function getWorkoutsHTML() {
       const workoutCards = workouts.length > 0 ? workouts.map(w => {
-        const exList = w.exercises.map(ex => `
+        const exList = (w.exercises || []).map(ex => `
           <div class="flex justify-between items-center text-xs py-0.5">
             <span class="text-white font-medium">${ex.name}</span>
             <div class="flex items-center gap-2">
@@ -902,7 +919,7 @@
             <div class="flex justify-between items-center mb-2">
               <div>
                 <span class="font-bold text-amber-400 text-sm">${w.dateFormatted || w.date}</span>
-                <span class="text-[11px] text-slate-400 ml-2">${w.weekText}</span>
+                <span class="text-[11px] text-slate-400 ml-2">${w.weekText || ''}</span>
               </div>
               <div class="flex items-center gap-1.5">
                 <button onclick="openEditWorkoutModal('${w.id}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-sky-400 px-2 py-1 rounded border border-sky-500/40 cursor-pointer">
@@ -921,15 +938,15 @@
           </div>
         `;
       }).join('') : `
-        <div class="card text-center p-6 border-dashed border-slate-700 text-slate-400 text-xs">
-          <div class="text-2xl mb-2">🏋️‍♂️</div>
-          <div class="font-bold text-slate-300 mb-1">Журнал тренировок пока пуст</div>
-          <div>Нажмите «Записать тренировку», чтобы зафиксировать победу в зале!</div>
+        <div class="card text-center p-8 border-dashed border-slate-700 text-slate-400 text-xs">
+          <div class="text-3xl mb-2">🏋️‍♂️</div>
+          <div class="font-bold text-slate-200 text-sm mb-1">Летопись тренировок пуста</div>
+          <div class="text-slate-400 max-w-xs mx-auto">Нажми кнопку ниже, чтобы зафиксировать свою первую победу в зале и зажечь манекен героя!</div>
         </div>
       `;
 
       return `
-        <button class="btn-gold w-full text-xs py-2.5 mb-3" onclick="openNewWorkoutModal()">
+        <button class="btn-gold w-full text-xs py-2.5 mb-3 cursor-pointer" onclick="openNewWorkoutModal()">
           ➕ Записать тренировку (+50 XP)
         </button>
 
@@ -946,10 +963,10 @@
         id: "w_" + Date.now(),
         date: dateStr,
         dateFormatted: dateFmt,
-        weekText: "Неделя 7",
+        weekText: "Неделя 1",
         type: "strength",
         exercises: [
-          { name: "Жим лёжа", weight: 60, reps: 8, sets: 4, rpe: 8, muscle: "chest" }
+          { name: "Жим лёжа", weight: 50, reps: 10, sets: 3, rpe: 8, muscle: "chest" }
         ]
       };
       document.getElementById('workoutModalTitle').innerText = "⚔️ НОВАЯ ТРЕНИРОВКА";
@@ -968,7 +985,7 @@
     }
 
     function deleteWorkout(workoutId) {
-      if (confirm("Вы уверены, что хотите удалить эту тренировку из летописи?")) {
+      if (confirm("Удалить эту тренировку из летописи?")) {
         workouts = workouts.filter(w => w.id !== workoutId);
         saveAllState();
         showToast("🗑 Тренировка удалена!");
@@ -988,7 +1005,7 @@
         <div class="card border-slate-700 p-2.5 mb-2 bg-slate-900/80">
           <div class="flex justify-between items-center mb-1.5">
             <span class="text-xs font-bold text-sky-300">Упражнение #${idx + 1}</span>
-            <button onclick="removeExerciseFromDraft(${idx})" class="text-[11px] text-red-400 hover:text-red-300">Удалить ✕</button>
+            <button onclick="removeExerciseFromDraft(${idx})" class="text-[11px] text-red-400 hover:text-red-300 cursor-pointer">Удалить ✕</button>
           </div>
           <input type="text" oninput="editingWorkout.exercises[${idx}].name=this.value" value="${ex.name}" placeholder="Название (напр. Жим лёжа)" class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white mb-2">
           
@@ -1035,7 +1052,7 @@
           ${exercisesHTML}
         </div>
 
-        <button onclick="saveWorkoutDraft()" class="btn-gold w-full text-xs py-2.5">
+        <button onclick="saveWorkoutDraft()" class="btn-gold w-full text-xs py-2.5 cursor-pointer">
           💾 Сохранить тренировку (+50 XP)
         </button>
       `;
@@ -1043,7 +1060,7 @@
 
     function addExerciseToDraft() {
       if (!editingWorkout) return;
-      editingWorkout.exercises.push({ name: "Новое упражнение", weight: 50, reps: 10, sets: 3, rpe: 8, muscle: "general" });
+      editingWorkout.exercises.push({ name: "Новое упражнение", weight: 40, reps: 10, sets: 3, rpe: 8, muscle: "general" });
       renderWorkoutForm();
     }
 
@@ -1068,7 +1085,7 @@
       render();
     }
 
-    // 4. PROFILE SCREEN (Single source of truth for body stats!)
+    // 4. PROFILE SCREEN (Single source of truth!)
     function getProfileHTML() {
       const cutTarget = getGoalTargetData('cut');
       const maintainTarget = getGoalTargetData('maintain');
@@ -1083,15 +1100,15 @@
         return `
           <div class="grid grid-cols-4 items-center gap-1 text-xs py-1.5 border-b border-slate-800/60">
             <span class="text-slate-300 font-medium">${item.name}</span>
-            <input type="number" step="0.5" oninput="updateMeasurementLive('${key}', 'cur', this.value)" value="${item.cur}" class="bg-slate-900 border border-slate-700 rounded p-1 text-center text-xs text-white">
-            <input type="number" step="0.5" oninput="updateMeasurementLive('${key}', 'tgt', this.value)" value="${item.tgt}" class="bg-slate-900 border border-slate-700 rounded p-1 text-center text-xs text-amber-300 font-bold">
-            <span class="text-right font-bold ${deltaColor}" id="delta_${key}">${deltaStr} см</span>
+            <input type="number" step="0.5" oninput="updateMeasurementLive('${key}', 'cur', this.value)" value="${item.cur || ''}" placeholder="0" class="bg-slate-900 border border-slate-700 rounded p-1 text-center text-xs text-white">
+            <input type="number" step="0.5" oninput="updateMeasurementLive('${key}', 'tgt', this.value)" value="${item.tgt || ''}" placeholder="0" class="bg-slate-900 border border-slate-700 rounded p-1 text-center text-xs text-amber-300 font-bold">
+            <span class="text-right font-bold ${deltaColor}" id="delta_${key}">${item.cur > 0 && item.tgt > 0 ? deltaStr + ' см' : '—'}</span>
           </div>
         `;
       }).join('');
 
       return `
-        <!-- Hero Identity & Body Metrics (Single place!) -->
+        <!-- Hero Identity & Body Metrics -->
         <div class="card mb-3">
           <div class="text-[11px] font-bold text-sky-300 font-cinzel mb-2">ХАРАКТЕРИСТИКИ ГЕРОЯ</div>
           <div class="space-y-2 text-xs">
@@ -1110,11 +1127,11 @@
               </div>
               <div>
                 <label class="text-[9px] text-slate-400 block mb-0.5">Возраст</label>
-                <input type="number" oninput="userProfile.age=Number(this.value); saveAllState();" value="${userProfile.age}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-center">
+                <input type="number" oninput="userProfile.age=Number(this.value); saveAllState(); render();" value="${userProfile.age}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-center">
               </div>
               <div>
                 <label class="text-[9px] text-slate-400 block mb-0.5">Рост (см)</label>
-                <input type="number" oninput="userProfile.height=Number(this.value); saveAllState();" value="${userProfile.height}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-center">
+                <input type="number" oninput="userProfile.height=Number(this.value); saveAllState(); render();" value="${userProfile.height}" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-center">
               </div>
             </div>
           </div>
@@ -1131,7 +1148,7 @@
           </div>
           <div class="flex items-center gap-2">
             <input type="number" id="weightInputBox" step="0.1" value="${userProfile.currentWeight}" class="w-28 bg-slate-900 border border-slate-700 rounded-lg py-1.5 px-3 text-lg font-black text-sky-300 text-center">
-            <button class="btn-gold flex-1 text-xs py-2" onclick="commitWeightEntry()">
+            <button class="btn-gold flex-1 text-xs py-2 cursor-pointer" onclick="commitWeightEntry()">
               Зафиксировать (+10 XP) 📌
             </button>
           </div>
@@ -1198,20 +1215,20 @@
         <!-- Reset Button -->
         <div class="text-center pt-2">
           <button onclick="resetProfile()" class="text-xs text-slate-500 hover:text-red-400 underline cursor-pointer">
-            🔄 Сбросить профиль и начать заново с 1 уровня
+            🔄 Сбросить всё и создать героя заново
           </button>
         </div>
       `;
     }
 
     function resetProfile() {
-      if (confirm("Сбросить прогресс и пройти создание персонажа заново с 1 уровня?")) {
-        userProfile.isConfigured = false;
-        userProfile.level = 1;
-        userProfile.xp = 0;
-        saveAllState();
+      if (confirm("Вы уверены? Это полностью очистит данные и откроет чистый экран создания персонажа с 1 уровня.")) {
+        localStorage.clear();
+        userProfile = null;
+        workouts = [];
+        weightHistory = [];
+        mealsByDate = {};
         checkOnboarding();
-        render();
       }
     }
 
@@ -1253,7 +1270,7 @@
     function selectGoalOption(newGoal) {
       userProfile.currentGoal = newGoal;
       saveAllState();
-      showToast(`🎯 Цель изменена на "${newGoal.toUpperCase()}". Питание пересчитано!`);
+      showToast(`🎯 Цель изменена на "${newGoal.toUpperCase()}". План пересчитан!`);
       render();
     }
 
@@ -1264,7 +1281,7 @@
       render();
     }
 
-    // 5. CALENDAR (Full month switcher + Real workouts link)
+    // 5. CALENDAR
     const monthNames = [
       "ЯНВАРЬ", "ФЕВРАЛЬ", "МАРТ", "АПРЕЛЬ", "МАЙ", "ИЮНЬ",
       "ИЮЛЬ", "АВГУСТ", "СЕНТЯБРЬ", "ОКТЯБРЬ", "НОЯБРЬ", "ДЕКАБРЬ"
@@ -1299,7 +1316,6 @@
       if (startDayOfWeek === -1) startDayOfWeek = 6;
 
       let html = '';
-      
       for (let i = 0; i < startDayOfWeek; i++) {
         html += `<div class="p-1 opacity-20"></div>`;
       }
@@ -1350,7 +1366,7 @@
           <div class="mb-2">
             <div class="text-xs font-semibold text-orange-400 mb-1">🏋️ Тренировка (${w.type || 'Силовая'})</div>
             <div class="text-xs space-y-1 text-slate-300 bg-slate-900/60 p-2 rounded">
-              ${w.exercises.map(ex => `
+              ${(w.exercises || []).map(ex => `
                 <div class="flex justify-between">
                   <span>${ex.name}</span>
                   <span class="text-sky-300 font-bold">${ex.weight}×${ex.reps}×${ex.sets} <span class="text-amber-400 font-normal">RPE ${ex.rpe}</span></span>
@@ -1387,7 +1403,7 @@
     // Storage
     function saveAllState() {
       try {
-        localStorage.setItem('herogym_profile', JSON.stringify(userProfile));
+        if (userProfile) localStorage.setItem('herogym_profile', JSON.stringify(userProfile));
         localStorage.setItem('herogym_weights', JSON.stringify(weightHistory));
         localStorage.setItem('herogym_measurements', JSON.stringify(measurements));
         localStorage.setItem('herogym_workouts', JSON.stringify(workouts));
@@ -1400,11 +1416,8 @@
         const p = localStorage.getItem('herogym_profile');
         if (p) {
           const parsed = JSON.parse(p);
-          userProfile = { ...userProfile, ...parsed };
-          // Авто-миграция со старого хардкода
-          if (!userProfile.level || userProfile.level === 7) {
-            userProfile.level = 1;
-            userProfile.xp = 0;
+          if (parsed && parsed.isConfigured) {
+            userProfile = parsed;
           }
         }
         const w = localStorage.getItem('herogym_weights');
@@ -1413,17 +1426,8 @@
         if (m) measurements = JSON.parse(m);
         const wo = localStorage.getItem('herogym_workouts');
         if (wo) workouts = JSON.parse(wo);
-        
         const ml = localStorage.getItem('herogym_meals_by_date');
-        if (ml) {
-          mealsByDate = JSON.parse(ml);
-        } else {
-          // Миграция старых приемов пищи
-          const oldMeals = localStorage.getItem('herogym_meals');
-          if (oldMeals) {
-            mealsByDate[getTodayKey()] = JSON.parse(oldMeals);
-          }
-        }
+        if (ml) mealsByDate = JSON.parse(ml);
       } catch (e) { console.error('LocalStorage load error:', e); }
     }
 
@@ -1446,29 +1450,19 @@
       }, 500);
     }
 
-    // Service Worker Registration with Auto-Update Check
+    // Service Worker Auto-Update
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js?t=' + Date.now())
           .then(reg => {
-            console.log('[SW] Service Worker v5 registered!');
+            console.log('[SW] Service Worker registered!');
             reg.update();
-            reg.onupdatefound = () => {
-              const installing = reg.installing;
-              if (installing) {
-                installing.onstatechange = () => {
-                  if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-                    showToast("⚡️ Доступна новая версия! Нажмите 🔄 вверху для обновления.");
-                  }
-                };
-              }
-            };
           })
           .catch(err => console.log('[SW] Registration error:', err));
       });
     }
 
-    // Init
+    // Init App
     loadAllState();
     checkOnboarding();
     render();
