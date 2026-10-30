@@ -188,7 +188,7 @@
   <!-- Header -->
   <div class="header-bar" id="appHeader">
     <div class="flex items-center gap-2">
-      <span class="text-sm font-bold text-amber-400 font-cinzel">⚔️ HERO GYM <span class="text-[10px] text-sky-400 font-sans font-normal border border-sky-500/40 px-1.5 py-0.5 rounded ml-1">v3.0</span></span>
+      <span class="text-sm font-bold text-amber-400 font-cinzel">⚔️ HERO GYM <span class="text-[10px] text-sky-400 font-sans font-normal border border-sky-500/40 px-1.5 py-0.5 rounded ml-1">v3.1</span></span>
     </div>
     <div class="flex items-center gap-1.5">
       <button onclick="forceAppRefresh()" title="Обновить приложение" class="text-xs bg-slate-800 text-slate-300 hover:text-amber-300 px-2 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
@@ -313,12 +313,20 @@
       <button onclick="toggleCalendar(false)" class="text-slate-400 hover:text-white text-xl p-1">✕</button>
     </div>
 
-    <!-- Month Switcher -->
+    <!-- Month & Year Switcher -->
     <div class="card card-glow mb-3">
-      <div class="flex justify-between items-center mb-3">
-        <button onclick="changeMonth(-1)" class="text-sky-300 px-3 py-1 bg-slate-800 rounded border border-slate-700 font-bold text-sm hover:bg-slate-700 cursor-pointer">‹ Пред</button>
-        <div class="text-xs font-bold text-amber-400 font-cinzel" id="calendarMonthTitle">ОКТЯБРЬ 2026</div>
-        <button onclick="changeMonth(1)" class="text-sky-300 px-3 py-1 bg-slate-800 rounded border border-slate-700 font-bold text-sm hover:bg-slate-700 cursor-pointer">След ›</button>
+      <div class="flex items-center justify-between gap-1.5 mb-3">
+        <button onclick="changeMonth(-1)" class="text-sky-300 px-2.5 py-1.5 bg-slate-800 rounded-lg border border-slate-700 font-bold text-sm hover:bg-slate-700 cursor-pointer">‹</button>
+        
+        <div class="flex items-center gap-1.5 flex-1 justify-center">
+          <select id="calendarMonthSelect" onchange="onMonthSelectChange(this.value)" class="bg-slate-900 border border-slate-700 text-amber-400 font-bold text-xs rounded-lg py-1.5 px-2 focus:border-amber-400 outline-none cursor-pointer">
+          </select>
+          <select id="calendarYearSelect" onchange="onYearSelectChange(this.value)" class="bg-slate-900 border border-slate-700 text-amber-400 font-bold text-xs rounded-lg py-1.5 px-2 focus:border-amber-400 outline-none cursor-pointer">
+          </select>
+        </div>
+
+        <button onclick="changeMonth(1)" class="text-sky-300 px-2.5 py-1.5 bg-slate-800 rounded-lg border border-slate-700 font-bold text-sm hover:bg-slate-700 cursor-pointer">›</button>
+        <button onclick="goToCurrentMonth()" class="text-[11px] bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-1.5 rounded-lg font-semibold cursor-pointer hover:bg-amber-500/20">Сегодня</button>
       </div>
       <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400 mb-1">
         <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
@@ -1281,16 +1289,54 @@
       render();
     }
 
-    // 5. CALENDAR
+    // 5. CALENDAR (Full Month/Year Navigation)
     const monthNames = [
-      "ЯНВАРЬ", "ФЕВРАЛЬ", "МАРТ", "АПРЕЛЬ", "МАЙ", "ИЮНЬ",
-      "ИЮЛЬ", "АВГУСТ", "СЕНТЯБРЬ", "ОКТЯБРЬ", "НОЯБРЬ", "ДЕКАБРЬ"
+      "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+      "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
     ];
 
     function toggleCalendar(open) {
       const modal = document.getElementById('calendarModal');
       modal.classList.toggle('active', open);
-      if (open) setupCalendar();
+      if (open) {
+        initCalendarSelects();
+        setupCalendar();
+      }
+    }
+
+    function initCalendarSelects() {
+      const mSelect = document.getElementById('calendarMonthSelect');
+      const ySelect = document.getElementById('calendarYearSelect');
+      if (mSelect && mSelect.options.length === 0) {
+        mSelect.innerHTML = monthNames.map((m, idx) => `<option value="${idx}">${m}</option>`).join('');
+      }
+      if (ySelect && ySelect.options.length === 0) {
+        const currentY = new Date().getFullYear();
+        let years = [];
+        for (let y = currentY - 2; y <= currentY + 3; y++) years.push(y);
+        ySelect.innerHTML = years.map(y => `<option value="${y}">${y} г.</option>`).join('');
+      }
+      if (mSelect) mSelect.value = calendarMonth;
+      if (ySelect) ySelect.value = calendarYear;
+    }
+
+    function onMonthSelectChange(val) {
+      calendarMonth = Number(val);
+      setupCalendar();
+    }
+
+    function onYearSelectChange(val) {
+      calendarYear = Number(val);
+      setupCalendar();
+    }
+
+    function goToCurrentMonth() {
+      const now = new Date();
+      calendarYear = now.getFullYear();
+      calendarMonth = now.getMonth();
+      selectedCalendarDay = now.getDate();
+      initCalendarSelects();
+      setupCalendar();
     }
 
     function changeMonth(delta) {
@@ -1302,11 +1348,12 @@
         calendarMonth = 0;
         calendarYear++;
       }
+      initCalendarSelects();
       setupCalendar();
     }
 
     function setupCalendar() {
-      document.getElementById('calendarMonthTitle').innerText = `${monthNames[calendarMonth]} ${calendarYear}`;
+      initCalendarSelects();
       const container = document.getElementById('calendarDays');
       
       const firstDayOfMonth = new Date(calendarYear, calendarMonth, 1);
@@ -1321,6 +1368,11 @@
       }
 
       const currentMonthKey = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
+      let totalWorkoutsThisMonth = 0;
+
+      if (selectedCalendarDay > daysInMonth) {
+        selectedCalendarDay = daysInMonth;
+      }
 
       for (let day = 1; day <= daysInMonth; day++) {
         const dayStr = String(day).padStart(2, '0');
@@ -1329,6 +1381,8 @@
         const hasWorkout = workouts.some(w => {
           return w.date === fullDateKey || (w.dateFormatted && w.dateFormatted.includes(`${dayStr}.${String(calendarMonth+1).padStart(2,'0')}`));
         });
+
+        if (hasWorkout) totalWorkoutsThisMonth++;
 
         const isSelected = (day === selectedCalendarDay);
 
@@ -1343,10 +1397,10 @@
       }
 
       container.innerHTML = html;
-      selectCalendarDay(selectedCalendarDay);
+      selectCalendarDay(selectedCalendarDay, totalWorkoutsThisMonth);
     }
 
-    function selectCalendarDay(day) {
+    function selectCalendarDay(day, monthWorkoutsCount) {
       selectedCalendarDay = day;
       const dayStr = String(day).padStart(2, '0');
       const currentMonthKey = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
@@ -1383,11 +1437,13 @@
         `;
       }
 
+      const count = typeof monthWorkoutsCount === 'number' ? monthWorkoutsCount : workouts.filter(w => (w.date && w.date.startsWith(currentMonthKey))).length;
+
       document.getElementById('daySummaryContainer').innerHTML = `
         <div class="card border-amber-500/40">
           <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-bold text-amber-400">СВОДКА ЗА ${day} ${monthNames[calendarMonth]} ${calendarYear}</span>
-            <span class="text-[10px] text-slate-400">${dayWorkouts.length > 0 ? '🔥 Тренировочный день' : 'Отдых'}</span>
+            <span class="text-xs font-bold text-amber-400">СВОДКА ЗА ${day} ${monthNames[calendarMonth].toUpperCase()} ${calendarYear}</span>
+            <span class="text-[10px] text-sky-300 bg-sky-950/40 border border-sky-500/30 px-2 py-0.5 rounded">В этом месяце: ${count} 🏋️</span>
           </div>
 
           ${workoutsHTML}
