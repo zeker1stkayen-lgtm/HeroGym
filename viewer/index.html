@@ -235,11 +235,11 @@
       scene.add(shadowMesh);
 
       // High-speed optimized textures (2K instead of bloated 4K)
-      conceptDiffuseTex = textureLoader.load('/viewer/textures/diffuse_concept_opt.jpg');
+      conceptDiffuseTex = textureLoader.load('./textures/diffuse_concept_opt.jpg');
       conceptDiffuseTex.encoding = THREE.sRGBEncoding;
 
-      normalTex = textureLoader.load('/viewer/textures/normal_opt.png');
-      emissiveTex = textureLoader.load('/viewer/textures/emissive_eyes_opt.png');
+      normalTex = textureLoader.load('./textures/normal_opt.png');
+      emissiveTex = textureLoader.load('./textures/emissive_eyes_opt.png');
 
       window.addEventListener('resize', onWindowResize);
 
@@ -330,7 +330,7 @@
 
       const fbxLoader = new THREE.FBXLoader();
       fbxLoader.load(
-        '/models/shadow_muscle.fbx',
+        './models/shadow_muscle.fbx',
         (fbx) => {
           currentModel = fbx;
           scene.add(currentModel);
