@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Shadow Muscle — Максимальный контраст и рельеф</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Three.js + OrbitControls + FBXLoader + fflate -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      /* Default: Platinum 50% (Approved by User) */
+      background: radial-gradient(circle at 50% 50%, #8c8f9f 0%, #6f7180 60%, #545663 100%);
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+    body.is-dark {
+      color: #f1f5f9;
+    }
+    canvas#c3d {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      touch-action: none;
+    }
+    .glass-btn {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(180, 185, 210, 0.7);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+      color: #1e1b2e;
+    }
+    .is-dark .glass-btn {
+      background: rgba(22, 25, 35, 0.85);
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+      color: #f1f5f9;
+    }
+    .glass-modal {
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(190, 195, 220, 0.8);
+      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.18);
+      color: #1e1b2e;
+    }
+    .is-dark .glass-modal {
+      background: rgba(20, 22, 32, 0.96);
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.75);
+      color: #f1f5f9;
+    }
+    .slider {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 5px;
+      border-radius: 3px;
+      background: #cbd5e1;
+      outline: none;
+    }
+    .is-dark .slider {
+      background: #334155;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #7c3aed;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(124, 58, 237, 0.5);
+    }
+  </style>
+</head>
+<body class="w-full h-full relative is-dark" id="bodyRoot">
+
+  <!-- 3D Viewport -->
+  <canvas id="c3d"></canvas>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="absolute inset-0 bg-[#e8e7ee]/95 flex flex-col items-center justify-center z-50 transition-opacity duration-300">
+    <div class="w-12 h-12 border-3 border-purple-500/30 border-t-purple-600 rounded-full animate-spin mb-3"></div>
+    <div class="text-sm font-bold text-slate-800 tracking-wider" id="loadingText">Настройка освещения спины и рельефа...</div>
+    <div class="text-xs text-purple-600 mt-1" id="loadingProgress">0%</div>
+  </div>
+
+  <!-- Top Floating Bar (Clean & Minimal) -->
+  <div class="absolute top-0 inset-x-0 p-4 pt-safe flex justify-between items-center pointer-events-none z-20">
+    <!-- Character Info Pill -->
+    <div class="pointer-events-auto glass-btn px-4 py-1.5 rounded-full flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+      <span class="text-xs font-black tracking-wider text-purple-300 uppercase">SHADOW MUSCLE</span>
+      <span class="text-[11px] text-slate-400 font-medium ml-1">· Студия Платина</span>
+    </div>
+
+    <!-- Settings Toggle -->
+    <button onclick="toggleSettings()" id="settingsBtn" class="pointer-events-auto glass-btn px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 hover:scale-105 active:scale-95 text-purple-300 hover:border-purple-500/50 shadow-md">
+      <span>⚙️</span>
+      <span>Свет</span>
+    </button>
+  </div>
+
+  <!-- Settings Panel (Lighting & Normal Sliders) -->
+  <div id="settingsPanel" class="absolute top-16 right-4 w-80 max-w-[calc(100vw-2rem)] glass-modal rounded-2xl p-4 flex flex-col gap-3 z-30 transition-all duration-300 transform opacity-0 translate-y-[-10px] pointer-events-none shadow-2xl">
+    <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
+      <div class="text-xs font-bold flex items-center gap-1.5">
+        <span>💡</span> Освещение мышц спины и торса
+      </div>
+      <button onclick="toggleSettings()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs font-bold px-1">✕</button>
+    </div>
+
+    <!-- Sliders -->
+    <div class="flex flex-col gap-2.5 text-xs">
+      <div class="flex items-center justify-between">
+        <span class="text-slate-500 dark:text-slate-400 font-medium">Свет на поясницу/спину:</span>
+        <div class="flex items-center gap-1.5">
+          <input type="range" id="backLightSlider" min="0.5" max="3.0" step="0.1" value="1.8" class="slider w-28" oninput="updateBackLight(this.value)">
+          <span id="backLightVal" class="font-mono text-purple-600 font-bold w-8 text-right">1.8x</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span class="text-slate-500 dark:text-slate-400 font-medium">Рельеф мышц (Normal):</span>
+        <div class="flex items-center gap-1.5">
+          <input type="range" id="normalSlider" min="0.5" max="3.5" step="0.1" value="2.4" class="slider w-28" oninput="updateNormalScale(this.value)">
+          <span id="normalVal" class="font-mono text-purple-600 font-bold w-8 text-right">2.4x</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span class="text-slate-500 dark:text-slate-400 font-medium">Блик на мышцах:</span>
+        <div class="flex items-center gap-1.5">
+          <input type="range" id="roughnessSlider" min="0.4" max="0.95" step="0.02" value="0.68" class="slider w-28" oninput="updateRoughness(this.value)">
+          <span id="roughnessVal" class="font-mono text-purple-600 font-bold w-8 text-right">0.68</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span class="text-slate-500 dark:text-slate-400 font-medium">Контраст теней:</span>
+        <div class="flex items-center gap-1.5">
+          <input type="range" id="shadowDepthSlider" min="0.1" max="1.0" step="0.05" value="0.38" class="slider w-28" oninput="updateAmbientIntensity(this.value)">
+          <span id="shadowDepthVal" class="font-mono text-purple-600 font-bold w-8 text-right">0.38</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Hint -->
+  <div class="absolute bottom-0 inset-x-0 p-4 pb-safe flex flex-col items-center pointer-events-none z-20">
+    <div class="pointer-events-auto glass-btn px-5 py-2 rounded-full text-xs font-semibold shadow-md flex items-center gap-2">
+      <span>🔄</span>
+      <span>Поверни спиной: теперь поясница, широчайшие и позвоночный желоб детально освещены!</span>
+    </div>
+  </div>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let currentModel = null;
+    let podiumMesh = null;
+    let podiumRimMesh = null;
+    let shadowMesh = null;
+    
+    // Comprehensive 360-degree anatomical lighting rig
+    let keyLightFront, keyLightBack, lumbarLight, topLight, fillLightLeft, fillLightRight, ambLight;
+    let isSettingsOpen = false;
+    let currentBgKey = 'platinum';
+
+    const textureLoader = new THREE.TextureLoader();
+    let conceptDiffuseTex, normalTex, emissiveTex;
+
+    const canvas = document.getElementById('c3d');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    const loadingProgress = document.getElementById('loadingProgress');
+
+    // Approved Studio Platinum Environment:
+    const PLATINUM_CONFIG = {
+      name: 'Платина 50%',
+      css: 'radial-gradient(circle at 50% 50%, #8c8f9f 0%, #6f7180 60%, #545663 100%)',
+      podiumColor: 0x686a77,
+      rimColor: 0xa78bfa,
+      exposure: 1.18
+    };
+
+    function createContactShadowTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createRadialGradient(256, 256, 40, 256, 256, 250);
+      grad.addColorStop(0.0, 'rgba(12, 10, 20, 0.65)');
+      grad.addColorStop(0.4, 'rgba(12, 10, 20, 0.38)');
+      grad.addColorStop(0.75, 'rgba(12, 10, 20, 0.12)');
+      grad.addColorStop(1.0, 'rgba(12, 10, 20, 0.0)');
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      const tex = new THREE.CanvasTexture(c);
+      return tex;
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+
+      const aspect = window.innerWidth / window.innerHeight;
+      camera = new THREE.PerspectiveCamera(36, aspect, 0.1, 100);
+      camera.position.set(0, 1.0, 4.8);
+
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.12;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      // Turntable controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.rotateSpeed = 0.85;
+      controls.target.set(0, 0.95, 0);
+      controls.minPolarAngle = Math.PI / 2;
+      controls.maxPolarAngle = Math.PI / 2;
+      controls.enableZoom = false;
+      controls.enablePan = false;
+
+      // ==========================================
+      // 360° ANATOMICAL LIGHTING RIG
+      // Specifically configured to illuminate the LOWER BACK (поясница) and CHEST!
+      // ==========================================
+
+      // 1. Soft Ambient Fill (preserves crevice depth)
+      ambLight = new THREE.AmbientLight(0x353246, 0.38);
+      scene.add(ambLight);
+
+      // 2. Front Key Raking Light (Pectorals, Abs, Quads)
+      keyLightFront = new THREE.DirectionalLight(0xfff6eb, 1.95);
+      keyLightFront.position.set(2.6, 3.8, 2.4);
+      keyLightFront.castShadow = true;
+      keyLightFront.shadow.mapSize.width = 2048;
+      keyLightFront.shadow.mapSize.height = 2048;
+      keyLightFront.shadow.bias = -0.001;
+      scene.add(keyLightFront);
+
+      // 3. REAR LUMBAR / LOWER-BACK LIGHT (Поясничный моделирующий свет!)
+      // Angled at 40° from back-right, skimming down across the erector spinae and lower lats!
+      lumbarLight = new THREE.DirectionalLight(0xfff3e6, 1.85);
+      lumbarLight.position.set(2.2, 2.6, -2.8);
+      lumbarLight.castShadow = true;
+      lumbarLight.shadow.mapSize.width = 2048;
+      lumbarLight.shadow.mapSize.height = 2048;
+      lumbarLight.shadow.bias = -0.001;
+      scene.add(lumbarLight);
+
+      // 4. Rear Upper Back / Trapezius Light
+      keyLightBack = new THREE.DirectionalLight(0xf0e6ff, 1.45);
+      keyLightBack.position.set(-2.4, 3.5, -2.6);
+      scene.add(keyLightBack);
+
+      // 5. Top Downlight (Clavicle, upper traps, glute upper shelf)
+      topLight = new THREE.DirectionalLight(0xffeedd, 0.90);
+      topLight.position.set(0, 5.2, 0.2);
+      scene.add(topLight);
+
+      // 6. Left & Right Rim Kickers (Edge separation)
+      fillLightLeft = new THREE.DirectionalLight(0xa5b4fc, 1.25);
+      fillLightLeft.position.set(-3.8, 2.2, 0);
+      scene.add(fillLightLeft);
+
+      fillLightRight = new THREE.DirectionalLight(0xa5b4fc, 1.25);
+      fillLightRight.position.set(3.8, 2.2, 0);
+      scene.add(fillLightRight);
+
+      // ==========================================
+      // CIRCULAR PODIUM
+      // ==========================================
+      const PODIUM_RADIUS = 0.95;
+      const PODIUM_HEIGHT = 0.07;
+
+      const podiumGeo = new THREE.CylinderGeometry(PODIUM_RADIUS, PODIUM_RADIUS * 1.04, PODIUM_HEIGHT, 64);
+      const podiumMat = new THREE.MeshStandardMaterial({
+        color: 0x686a77,
+        roughness: 0.50,
+        metalness: 0.08
+      });
+      podiumMesh = new THREE.Mesh(podiumGeo, podiumMat);
+      podiumMesh.position.set(0, -PODIUM_HEIGHT / 2, 0);
+      podiumMesh.receiveShadow = true;
+      podiumMesh.castShadow = true;
+      scene.add(podiumMesh);
+
+      const rimGeo = new THREE.TorusGeometry(PODIUM_RADIUS, 0.012, 16, 64);
+      const rimMat = new THREE.MeshStandardMaterial({
+        color: 0xa78bfa,
+        roughness: 0.2,
+        metalness: 0.4
+      });
+      podiumRimMesh = new THREE.Mesh(rimGeo, rimMat);
+      podiumRimMesh.rotation.x = Math.PI / 2;
+      podiumRimMesh.position.set(0, 0, 0);
+      scene.add(podiumRimMesh);
+
+      // Drop shadow below podium
+      const shadowTex = createContactShadowTexture();
+      const shadowGeo = new THREE.PlaneGeometry(2.8, 2.8);
+      const shadowMat = new THREE.MeshBasicMaterial({
+        map: shadowTex,
+        transparent: true,
+        depthWrite: false
+      });
+      shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+      shadowMesh.rotation.x = -Math.PI / 2;
+      shadowMesh.position.y = -PODIUM_HEIGHT - 0.002;
+      scene.add(shadowMesh);
+
+      // Load textures
+      conceptDiffuseTex = textureLoader.load('/viewer/textures/diffuse_concept.jpg');
+      conceptDiffuseTex.encoding = THREE.sRGBEncoding;
+
+      normalTex = textureLoader.load('/viewer/textures/normal.png');
+      emissiveTex = textureLoader.load('/viewer/textures/emissive_eyes.png');
+
+      window.addEventListener('resize', onWindowResize);
+
+      loadModel();
+      animate();
+    }
+
+    function fitModelToScreen(model) {
+      if (!model) return;
+      model.updateMatrixWorld(true);
+
+      let box = new THREE.Box3().setFromObject(model);
+      let size = new THREE.Vector3();
+      box.getSize(size);
+
+      const TARGET_HEIGHT = 2.0;
+      const rawHeight = size.y > 0.001 ? size.y : 1.0;
+      const scaleFactor = TARGET_HEIGHT / rawHeight;
+      model.scale.setScalar(scaleFactor);
+
+      model.updateMatrixWorld(true);
+      box = new THREE.Box3().setFromObject(model);
+      box.getSize(size);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+
+      // Place character feet on podium top at Y = 0
+      model.position.x = -center.x;
+      model.position.z = -center.z;
+      model.position.y = -box.min.y;
+
+      const neededRadius = Math.max(0.95, size.x * 0.75);
+      if (podiumMesh && podiumRimMesh && shadowMesh) {
+        podiumMesh.scale.set(neededRadius / 0.95, 1, neededRadius / 0.95);
+        podiumRimMesh.scale.set(neededRadius / 0.95, neededRadius / 0.95, 1);
+        shadowMesh.scale.set(neededRadius / 0.95, neededRadius / 0.95, 1);
+      }
+
+      // Camera: Full character + podium + 38% margin
+      const totalVisualHeight = TARGET_HEIGHT + 0.25;
+      const targetY = TARGET_HEIGHT * 0.48;
+      controls.target.set(0, targetY, 0);
+
+      const fovRad = camera.fov * (Math.PI / 180);
+      let dist = (totalVisualHeight / 2) / Math.tan(fovRad / 2);
+      if (camera.aspect < 1.0) {
+        dist = dist / camera.aspect;
+      }
+      dist *= 1.38;
+
+      camera.position.set(0, targetY, dist);
+      controls.update();
+    }
+
+    function applyConceptMaterial() {
+      if (!currentModel) return;
+
+      const rVal = parseFloat(document.getElementById('roughnessSlider').value);
+      const nScale = parseFloat(document.getElementById('normalSlider').value);
+
+      currentModel.traverse(child => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+
+          if (child.geometry) {
+            child.geometry.computeVertexNormals();
+          }
+
+          child.material = new THREE.MeshStandardMaterial({
+            map: conceptDiffuseTex,
+            normalMap: normalTex,
+            normalScale: new THREE.Vector2(nScale, nScale),
+            emissiveMap: emissiveTex,
+            emissive: new THREE.Color(0xffffff),
+            emissiveIntensity: 1.8,
+            roughness: rVal,
+            metalness: 0.04
+          });
+        }
+      });
+    }
+
+
+    function toggleSettings() {
+      isSettingsOpen = !isSettingsOpen;
+      const panel = document.getElementById('settingsPanel');
+      if (isSettingsOpen) {
+        panel.classList.remove('opacity-0', 'translate-y-[-10px]', 'pointer-events-none');
+        panel.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+      } else {
+        panel.classList.add('opacity-0', 'translate-y-[-10px]', 'pointer-events-none');
+        panel.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+      }
+    }
+
+    function updateBackLight(val) {
+      document.getElementById('backLightVal').textContent = parseFloat(val).toFixed(1) + 'x';
+      if (lumbarLight) lumbarLight.intensity = parseFloat(val);
+      if (keyLightBack) keyLightBack.intensity = parseFloat(val) * 0.8;
+    }
+
+    function updateNormalScale(val) {
+      document.getElementById('normalVal').textContent = parseFloat(val).toFixed(1) + 'x';
+      if (currentModel) {
+        currentModel.traverse(c => {
+          if (c.isMesh && c.material && c.material.normalScale) {
+            c.material.normalScale.set(parseFloat(val), parseFloat(val));
+          }
+        });
+      }
+    }
+
+    function updateRoughness(val) {
+      document.getElementById('roughnessVal').textContent = parseFloat(val).toFixed(2);
+      if (currentModel) {
+        currentModel.traverse(c => {
+          if (c.isMesh && c.material) {
+            c.material.roughness = parseFloat(val);
+          }
+        });
+      }
+    }
+
+    function updateAmbientIntensity(val) {
+      document.getElementById('shadowDepthVal').textContent = parseFloat(val).toFixed(2);
+      if (ambLight) {
+        ambLight.intensity = parseFloat(val);
+      }
+    }
+
+    function loadModel() {
+      loadingOverlay.style.opacity = '1';
+      loadingOverlay.style.pointerEvents = 'auto';
+
+      const fbxLoader = new THREE.FBXLoader();
+      fbxLoader.load(
+        '/models/shadow_muscle.fbx',
+        (fbx) => {
+          currentModel = fbx;
+          scene.add(currentModel);
+
+          fitModelToScreen(currentModel);
+          applyConceptMaterial();
+
+          setTimeout(() => {
+            loadingOverlay.style.opacity = '0';
+            loadingOverlay.style.pointerEvents = 'none';
+          }, 150);
+        },
+        (xhr) => {
+          if (xhr.lengthComputable) {
+            const pct = Math.round((xhr.loaded / xhr.total) * 100);
+            loadingProgress.textContent = `${pct}%`;
+          }
+        },
+        (err) => {
+          loadingText.textContent = `Ошибка: ${err.message}`;
+        }
+      );
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      if (currentModel) {
+        fitModelToScreen(currentModel);
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
