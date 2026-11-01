@@ -398,6 +398,7 @@
 
     let editingWorkout = null;
     let activeTab = 'character';
+    let characterViewMode = '3d';
 
     function getTodayKey() {
       const d = new Date();
@@ -606,11 +607,6 @@
       const xpPct = Math.min(100, Math.round((xp / 1000) * 100));
 
       return `
-        <div class="text-center mb-2">
-          <div class="text-[10px] font-black tracking-widest text-amber-400 font-cinzel">LEVEL ${lvl} · ${getHeroTitle(lvl)}</div>
-          <div class="text-xl font-bold font-cinzel text-white">${userProfile.name}</div>
-        </div>
-
         <!-- Hero Card -->
         <div class="card card-glow mb-3">
           <div class="flex items-center gap-3.5">
@@ -635,15 +631,14 @@
           </div>
         </div>
 
-        <!-- Interactive Mannequin -->
-        <div class="card mb-3 text-center">
-          <div class="flex justify-between items-center mb-1">
-            <span class="text-[11px] font-bold text-sky-300 font-cinzel">⚔️ МАНЕКЕН МЫШЦ ГЕРОЯ</span>
-            <span class="text-[10px] text-slate-400">Нагрузка недели</span>
+        <!-- Shadow 3D Character Card -->
+        <div class="card mb-3 text-center p-3">
+          <div class="mb-2">
+            <div class="text-xl font-black font-cinzel tracking-wider text-purple-300">ТЕНЬ</div>
           </div>
-          ${renderMannequinHTML()}
-          <div class="text-[11px] text-slate-300 bg-slate-900/60 p-2 rounded border border-slate-800 mt-2" id="mannequinTip">
-            ${workouts.length === 0 ? 'Мышцы пока отдыхают. Запиши первую тренировку, чтобы зажечь сияние!' : 'Тапни по мышце, чтобы узнать статус тренированности!'}
+
+          <div class="relative w-full h-[520px] rounded-2xl overflow-hidden border border-slate-700/60 shadow-2xl bg-[#6f7180]">
+            <iframe src="/viewer/" class="w-full h-full border-0 block" allow="accelerometer; gyroscope"></iframe>
           </div>
         </div>
 
@@ -669,6 +664,45 @@
           ${renderWeightChart()}
         </div>
       `;
+    }
+
+    function setCharacterView(mode) {
+      characterViewMode = mode;
+      const container = document.getElementById('characterViewContainer');
+      const tip = document.getElementById('mannequinTip');
+      const btn3D = document.getElementById('btnView3D');
+      const btn2D = document.getElementById('btnView2D');
+
+      if (btn3D && btn2D) {
+        if (mode === '3d') {
+          btn3D.className = 'px-2.5 py-1 rounded-md font-bold transition bg-amber-500 text-slate-950 shadow';
+          btn2D.className = 'px-2.5 py-1 rounded-md font-bold transition text-slate-400 hover:text-white';
+        } else {
+          btn2D.className = 'px-2.5 py-1 rounded-md font-bold transition bg-amber-500 text-slate-950 shadow';
+          btn3D.className = 'px-2.5 py-1 rounded-md font-bold transition text-slate-400 hover:text-white';
+        }
+      }
+
+      if (container) {
+        container.innerHTML = renderCharacterViewHTML();
+      }
+      if (tip) {
+        tip.innerHTML = (mode === '3d') 
+          ? '🖐 Вращай 3D-героя на 360° пальцем или мышью. Студия «Платина».'
+          : (workouts.length === 0 ? 'Мышцы пока отдыхают. Запиши первую тренировку, чтобы зажечь сияние!' : 'Тапни по мышце, чтобы узнать статус тренированности!');
+      }
+    }
+
+    function renderCharacterViewHTML() {
+      if (characterViewMode === '3d') {
+        return `
+          <div class="relative w-full h-[420px] rounded-2xl overflow-hidden my-2 border border-slate-700/60 shadow-2xl bg-[#545663]">
+            <iframe src="/viewer/" class="w-full h-full border-0" allow="accelerometer; gyroscope"></iframe>
+          </div>
+        `;
+      } else {
+        return renderMannequinHTML();
+      }
     }
 
     function renderMannequinHTML() {

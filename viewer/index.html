@@ -102,74 +102,9 @@
     <div class="text-xs text-purple-600 mt-1" id="loadingProgress">0%</div>
   </div>
 
-  <!-- Top Floating Bar (Clean & Minimal) -->
-  <div class="absolute top-0 inset-x-0 p-4 pt-safe flex justify-between items-center pointer-events-none z-20">
-    <!-- Character Info Pill -->
-    <div class="pointer-events-auto glass-btn px-4 py-1.5 rounded-full flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-      <span class="text-xs font-black tracking-wider text-purple-300 uppercase">SHADOW MUSCLE</span>
-      <span class="text-[11px] text-slate-400 font-medium ml-1">· Студия Платина</span>
-    </div>
 
-    <!-- Settings Toggle -->
-    <button onclick="toggleSettings()" id="settingsBtn" class="pointer-events-auto glass-btn px-3.5 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-1.5 hover:scale-105 active:scale-95 text-purple-300 hover:border-purple-500/50 shadow-md">
-      <span>⚙️</span>
-      <span>Свет</span>
-    </button>
-  </div>
 
-  <!-- Settings Panel (Lighting & Normal Sliders) -->
-  <div id="settingsPanel" class="absolute top-16 right-4 w-80 max-w-[calc(100vw-2rem)] glass-modal rounded-2xl p-4 flex flex-col gap-3 z-30 transition-all duration-300 transform opacity-0 translate-y-[-10px] pointer-events-none shadow-2xl">
-    <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
-      <div class="text-xs font-bold flex items-center gap-1.5">
-        <span>💡</span> Освещение мышц спины и торса
-      </div>
-      <button onclick="toggleSettings()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs font-bold px-1">✕</button>
-    </div>
 
-    <!-- Sliders -->
-    <div class="flex flex-col gap-2.5 text-xs">
-      <div class="flex items-center justify-between">
-        <span class="text-slate-500 dark:text-slate-400 font-medium">Свет на поясницу/спину:</span>
-        <div class="flex items-center gap-1.5">
-          <input type="range" id="backLightSlider" min="0.5" max="3.0" step="0.1" value="1.8" class="slider w-28" oninput="updateBackLight(this.value)">
-          <span id="backLightVal" class="font-mono text-purple-600 font-bold w-8 text-right">1.8x</span>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between">
-        <span class="text-slate-500 dark:text-slate-400 font-medium">Рельеф мышц (Normal):</span>
-        <div class="flex items-center gap-1.5">
-          <input type="range" id="normalSlider" min="0.5" max="3.5" step="0.1" value="2.4" class="slider w-28" oninput="updateNormalScale(this.value)">
-          <span id="normalVal" class="font-mono text-purple-600 font-bold w-8 text-right">2.4x</span>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between">
-        <span class="text-slate-500 dark:text-slate-400 font-medium">Блик на мышцах:</span>
-        <div class="flex items-center gap-1.5">
-          <input type="range" id="roughnessSlider" min="0.4" max="0.95" step="0.02" value="0.68" class="slider w-28" oninput="updateRoughness(this.value)">
-          <span id="roughnessVal" class="font-mono text-purple-600 font-bold w-8 text-right">0.68</span>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between">
-        <span class="text-slate-500 dark:text-slate-400 font-medium">Контраст теней:</span>
-        <div class="flex items-center gap-1.5">
-          <input type="range" id="shadowDepthSlider" min="0.1" max="1.0" step="0.05" value="0.38" class="slider w-28" oninput="updateAmbientIntensity(this.value)">
-          <span id="shadowDepthVal" class="font-mono text-purple-600 font-bold w-8 text-right">0.38</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom Hint -->
-  <div class="absolute bottom-0 inset-x-0 p-4 pb-safe flex flex-col items-center pointer-events-none z-20">
-    <div class="pointer-events-auto glass-btn px-5 py-2 rounded-full text-xs font-semibold shadow-md flex items-center gap-2">
-      <span>🔄</span>
-      <span>Поверни спиной: теперь поясница, широчайшие и позвоночный желоб детально освещены!</span>
-    </div>
-  </div>
 
   <script>
     let scene, camera, renderer, controls;
@@ -356,6 +291,9 @@
       if (!model) return;
       model.updateMatrixWorld(true);
 
+      // Face camera forward initially (chest, abs, glowing white eyes)
+      model.rotation.y = Math.PI;
+
       let box = new THREE.Box3().setFromObject(model);
       let size = new THREE.Vector3();
       box.getSize(size);
@@ -383,8 +321,8 @@
         shadowMesh.scale.set(neededRadius / 0.95, neededRadius / 0.95, 1);
       }
 
-      // Camera: Full character + podium + 38% margin
-      const totalVisualHeight = TARGET_HEIGHT + 0.25;
+      // Camera: Make character much larger (closer camera, 5% margin)
+      const totalVisualHeight = TARGET_HEIGHT + 0.12;
       const targetY = TARGET_HEIGHT * 0.48;
       controls.target.set(0, targetY, 0);
 
@@ -393,7 +331,7 @@
       if (camera.aspect < 1.0) {
         dist = dist / camera.aspect;
       }
-      dist *= 1.38;
+      dist *= 1.05; // Prominent, larger, fills the frame powerfully
 
       camera.position.set(0, targetY, dist);
       controls.update();
@@ -402,8 +340,8 @@
     function applyConceptMaterial() {
       if (!currentModel) return;
 
-      const rVal = parseFloat(document.getElementById('roughnessSlider').value);
-      const nScale = parseFloat(document.getElementById('normalSlider').value);
+      const rVal = 0.68;
+      const nScale = 2.4;
 
       currentModel.traverse(child => {
         if (child.isMesh) {
