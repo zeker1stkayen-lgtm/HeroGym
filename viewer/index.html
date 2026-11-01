@@ -3,35 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Shadow Muscle — Максимальный контраст и рельеф</title>
+  <title>Shadow Muscle — 3D Персонаж</title>
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Three.js + OrbitControls + FBXLoader + fflate -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+  <!-- Local high-speed Three.js bundle (Zero external CDN dependency!) -->
+  <script src="./js/three.min.js"></script>
+  <script src="./js/OrbitControls.js"></script>
+  <script src="./js/fflate.min.js"></script>
+  <script src="./js/FBXLoader.js"></script>
 
   <style>
     * {
+      box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
     }
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
       margin: 0;
       padding: 0;
       overflow: hidden;
-      /* Default: Platinum 50% (Approved by User) */
       background: radial-gradient(circle at 50% 50%, #8c8f9f 0%, #6f7180 60%, #545663 100%);
       color: #f1f5f9;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      transition: background 0.4s ease, color 0.4s ease;
-    }
-    body.is-dark {
-      color: #f1f5f9;
     }
     canvas#c3d {
       width: 100vw;
@@ -39,72 +34,54 @@
       display: block;
       touch-action: none;
     }
-    .glass-btn {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(180, 185, 210, 0.7);
-      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
-      color: #1e1b2e;
+    #loadingOverlay {
+      position: absolute;
+      inset: 0;
+      background: #737583;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
     }
-    .is-dark .glass-btn {
-      background: rgba(22, 25, 35, 0.85);
-      border-color: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
-      color: #f1f5f9;
-    }
-    .glass-modal {
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(190, 195, 220, 0.8);
-      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.18);
-      color: #1e1b2e;
-    }
-    .is-dark .glass-modal {
-      background: rgba(20, 22, 32, 0.96);
-      border-color: rgba(255, 255, 255, 0.14);
-      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.75);
-      color: #f1f5f9;
-    }
-    .slider {
-      -webkit-appearance: none;
-      appearance: none;
-      height: 5px;
-      border-radius: 3px;
-      background: #cbd5e1;
-      outline: none;
-    }
-    .is-dark .slider {
-      background: #334155;
-    }
-    .slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #a855f7;
       border-radius: 50%;
-      background: #7c3aed;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(124, 58, 237, 0.5);
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loading-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #ffffff;
+    }
+    .loading-sub {
+      font-size: 11px;
+      color: #e2e8f0;
+      margin-top: 4px;
+      font-family: monospace;
     }
   </style>
 </head>
-<body class="w-full h-full relative is-dark" id="bodyRoot">
+<body>
 
-  <!-- 3D Viewport -->
+  <!-- 3D Canvas -->
   <canvas id="c3d"></canvas>
 
-  <!-- Loading Overlay -->
-  <div id="loadingOverlay" class="absolute inset-0 bg-[#e8e7ee]/95 flex flex-col items-center justify-center z-50 transition-opacity duration-300">
-    <div class="w-12 h-12 border-3 border-purple-500/30 border-t-purple-600 rounded-full animate-spin mb-3"></div>
-    <div class="text-sm font-bold text-slate-800 tracking-wider" id="loadingText">Настройка освещения спины и рельефа...</div>
-    <div class="text-xs text-purple-600 mt-1" id="loadingProgress">0%</div>
+  <!-- High-Speed Loading Overlay -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-title" id="loadingText">Загрузка Тени...</div>
+    <div class="loading-sub" id="loadingProgress">0%</div>
   </div>
-
-
-
-
 
   <script>
     let scene, camera, renderer, controls;
@@ -112,11 +89,8 @@
     let podiumMesh = null;
     let podiumRimMesh = null;
     let shadowMesh = null;
-    
-    // Comprehensive 360-degree anatomical lighting rig
+
     let keyLightFront, keyLightBack, lumbarLight, topLight, fillLightLeft, fillLightRight, ambLight;
-    let isSettingsOpen = false;
-    let currentBgKey = 'platinum';
 
     const textureLoader = new THREE.TextureLoader();
     let conceptDiffuseTex, normalTex, emissiveTex;
@@ -125,15 +99,6 @@
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
     const loadingProgress = document.getElementById('loadingProgress');
-
-    // Approved Studio Platinum Environment:
-    const PLATINUM_CONFIG = {
-      name: 'Платина 50%',
-      css: 'radial-gradient(circle at 50% 50%, #8c8f9f 0%, #6f7180 60%, #545663 100%)',
-      podiumColor: 0x686a77,
-      rimColor: 0xa78bfa,
-      exposure: 1.18
-    };
 
     function createContactShadowTexture() {
       const c = document.createElement('canvas');
@@ -150,8 +115,7 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 512, 512);
 
-      const tex = new THREE.CanvasTexture(c);
-      return tex;
+      return new THREE.CanvasTexture(c);
     }
 
     function init() {
@@ -159,7 +123,7 @@
 
       const aspect = window.innerWidth / window.innerHeight;
       camera = new THREE.PerspectiveCamera(36, aspect, 0.1, 100);
-      camera.position.set(0, 1.0, 4.8);
+      camera.position.set(0, 1.0, 4.5);
 
       renderer = new THREE.WebGLRenderer({
         canvas: canvas,
@@ -170,11 +134,11 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.12;
+      renderer.toneMappingExposure = 1.18;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-      // Turntable controls
+      // Turntable controls: 100% horizontal 360 rotation
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
@@ -186,44 +150,40 @@
       controls.enablePan = false;
 
       // ==========================================
-      // 360° ANATOMICAL LIGHTING RIG
-      // Specifically configured to illuminate the LOWER BACK (поясница) and CHEST!
+      // LIGHTING RIG
       // ==========================================
-
-      // 1. Soft Ambient Fill (preserves crevice depth)
       ambLight = new THREE.AmbientLight(0x353246, 0.38);
       scene.add(ambLight);
 
-      // 2. Front Key Raking Light (Pectorals, Abs, Quads)
+      // Key Raking Light Front (Pectorals, Abs)
       keyLightFront = new THREE.DirectionalLight(0xfff6eb, 1.95);
       keyLightFront.position.set(2.6, 3.8, 2.4);
       keyLightFront.castShadow = true;
-      keyLightFront.shadow.mapSize.width = 2048;
-      keyLightFront.shadow.mapSize.height = 2048;
+      keyLightFront.shadow.mapSize.width = 1024;
+      keyLightFront.shadow.mapSize.height = 1024;
       keyLightFront.shadow.bias = -0.001;
       scene.add(keyLightFront);
 
-      // 3. REAR LUMBAR / LOWER-BACK LIGHT (Поясничный моделирующий свет!)
-      // Angled at 40° from back-right, skimming down across the erector spinae and lower lats!
-      lumbarLight = new THREE.DirectionalLight(0xfff3e6, 1.85);
+      // Rear Lumbar Light (Поясница и нижняя часть широчайших)
+      lumbarLight = new THREE.DirectionalLight(0xfff3e6, 1.80);
       lumbarLight.position.set(2.2, 2.6, -2.8);
       lumbarLight.castShadow = true;
-      lumbarLight.shadow.mapSize.width = 2048;
-      lumbarLight.shadow.mapSize.height = 2048;
+      lumbarLight.shadow.mapSize.width = 1024;
+      lumbarLight.shadow.mapSize.height = 1024;
       lumbarLight.shadow.bias = -0.001;
       scene.add(lumbarLight);
 
-      // 4. Rear Upper Back / Trapezius Light
-      keyLightBack = new THREE.DirectionalLight(0xf0e6ff, 1.45);
+      // Rear Upper Back / Traps
+      keyLightBack = new THREE.DirectionalLight(0xf0e6ff, 1.40);
       keyLightBack.position.set(-2.4, 3.5, -2.6);
       scene.add(keyLightBack);
 
-      // 5. Top Downlight (Clavicle, upper traps, glute upper shelf)
+      // Top Downlight
       topLight = new THREE.DirectionalLight(0xffeedd, 0.90);
       topLight.position.set(0, 5.2, 0.2);
       scene.add(topLight);
 
-      // 6. Left & Right Rim Kickers (Edge separation)
+      // Left & Right Rim Kickers (Edge separation)
       fillLightLeft = new THREE.DirectionalLight(0xa5b4fc, 1.25);
       fillLightLeft.position.set(-3.8, 2.2, 0);
       scene.add(fillLightLeft);
@@ -238,7 +198,7 @@
       const PODIUM_RADIUS = 0.95;
       const PODIUM_HEIGHT = 0.07;
 
-      const podiumGeo = new THREE.CylinderGeometry(PODIUM_RADIUS, PODIUM_RADIUS * 1.04, PODIUM_HEIGHT, 64);
+      const podiumGeo = new THREE.CylinderGeometry(PODIUM_RADIUS, PODIUM_RADIUS * 1.04, PODIUM_HEIGHT, 48);
       const podiumMat = new THREE.MeshStandardMaterial({
         color: 0x686a77,
         roughness: 0.50,
@@ -250,7 +210,7 @@
       podiumMesh.castShadow = true;
       scene.add(podiumMesh);
 
-      const rimGeo = new THREE.TorusGeometry(PODIUM_RADIUS, 0.012, 16, 64);
+      const rimGeo = new THREE.TorusGeometry(PODIUM_RADIUS, 0.012, 12, 48);
       const rimMat = new THREE.MeshStandardMaterial({
         color: 0xa78bfa,
         roughness: 0.2,
@@ -261,7 +221,7 @@
       podiumRimMesh.position.set(0, 0, 0);
       scene.add(podiumRimMesh);
 
-      // Drop shadow below podium
+      // Ground Shadow
       const shadowTex = createContactShadowTexture();
       const shadowGeo = new THREE.PlaneGeometry(2.8, 2.8);
       const shadowMat = new THREE.MeshBasicMaterial({
@@ -274,12 +234,12 @@
       shadowMesh.position.y = -PODIUM_HEIGHT - 0.002;
       scene.add(shadowMesh);
 
-      // Load textures
-      conceptDiffuseTex = textureLoader.load('/viewer/textures/diffuse_concept.jpg');
+      // High-speed optimized textures (2K instead of bloated 4K)
+      conceptDiffuseTex = textureLoader.load('/viewer/textures/diffuse_concept_opt.jpg');
       conceptDiffuseTex.encoding = THREE.sRGBEncoding;
 
-      normalTex = textureLoader.load('/viewer/textures/normal.png');
-      emissiveTex = textureLoader.load('/viewer/textures/emissive_eyes.png');
+      normalTex = textureLoader.load('/viewer/textures/normal_opt.png');
+      emissiveTex = textureLoader.load('/viewer/textures/emissive_eyes_opt.png');
 
       window.addEventListener('resize', onWindowResize);
 
@@ -289,10 +249,11 @@
 
     function fitModelToScreen(model) {
       if (!model) return;
-      model.updateMatrixWorld(true);
 
-      // Face camera forward initially (chest, abs, glowing white eyes)
-      model.rotation.y = Math.PI;
+      // In this FBX, the front chest/face points along +X and shoulders are along Z.
+      // Rotate -90° (-Math.PI / 2) so chest, abs and glowing eyes face directly forward into the camera!
+      model.rotation.y = -Math.PI / 2;
+      model.updateMatrixWorld(true);
 
       let box = new THREE.Box3().setFromObject(model);
       let size = new THREE.Vector3();
@@ -314,14 +275,14 @@
       model.position.z = -center.z;
       model.position.y = -box.min.y;
 
-      const neededRadius = Math.max(0.95, size.x * 0.75);
+      const neededRadius = Math.max(0.95, size.x * 0.70);
       if (podiumMesh && podiumRimMesh && shadowMesh) {
         podiumMesh.scale.set(neededRadius / 0.95, 1, neededRadius / 0.95);
         podiumRimMesh.scale.set(neededRadius / 0.95, neededRadius / 0.95, 1);
         shadowMesh.scale.set(neededRadius / 0.95, neededRadius / 0.95, 1);
       }
 
-      // Camera: Make character much larger (closer camera, 5% margin)
+      // Camera: Bold, prominent, fills the frame
       const totalVisualHeight = TARGET_HEIGHT + 0.12;
       const targetY = TARGET_HEIGHT * 0.48;
       controls.target.set(0, targetY, 0);
@@ -331,7 +292,7 @@
       if (camera.aspect < 1.0) {
         dist = dist / camera.aspect;
       }
-      dist *= 1.05; // Prominent, larger, fills the frame powerfully
+      dist *= 1.05; // 5% margin: large and heroic
 
       camera.position.set(0, targetY, dist);
       controls.update();
@@ -339,9 +300,6 @@
 
     function applyConceptMaterial() {
       if (!currentModel) return;
-
-      const rVal = 0.68;
-      const nScale = 2.4;
 
       currentModel.traverse(child => {
         if (child.isMesh) {
@@ -355,68 +313,20 @@
           child.material = new THREE.MeshStandardMaterial({
             map: conceptDiffuseTex,
             normalMap: normalTex,
-            normalScale: new THREE.Vector2(nScale, nScale),
+            normalScale: new THREE.Vector2(2.4, 2.4),
             emissiveMap: emissiveTex,
             emissive: new THREE.Color(0xffffff),
             emissiveIntensity: 1.8,
-            roughness: rVal,
+            roughness: 0.68,
             metalness: 0.04
           });
         }
       });
     }
 
-
-    function toggleSettings() {
-      isSettingsOpen = !isSettingsOpen;
-      const panel = document.getElementById('settingsPanel');
-      if (isSettingsOpen) {
-        panel.classList.remove('opacity-0', 'translate-y-[-10px]', 'pointer-events-none');
-        panel.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
-      } else {
-        panel.classList.add('opacity-0', 'translate-y-[-10px]', 'pointer-events-none');
-        panel.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
-      }
-    }
-
-    function updateBackLight(val) {
-      document.getElementById('backLightVal').textContent = parseFloat(val).toFixed(1) + 'x';
-      if (lumbarLight) lumbarLight.intensity = parseFloat(val);
-      if (keyLightBack) keyLightBack.intensity = parseFloat(val) * 0.8;
-    }
-
-    function updateNormalScale(val) {
-      document.getElementById('normalVal').textContent = parseFloat(val).toFixed(1) + 'x';
-      if (currentModel) {
-        currentModel.traverse(c => {
-          if (c.isMesh && c.material && c.material.normalScale) {
-            c.material.normalScale.set(parseFloat(val), parseFloat(val));
-          }
-        });
-      }
-    }
-
-    function updateRoughness(val) {
-      document.getElementById('roughnessVal').textContent = parseFloat(val).toFixed(2);
-      if (currentModel) {
-        currentModel.traverse(c => {
-          if (c.isMesh && c.material) {
-            c.material.roughness = parseFloat(val);
-          }
-        });
-      }
-    }
-
-    function updateAmbientIntensity(val) {
-      document.getElementById('shadowDepthVal').textContent = parseFloat(val).toFixed(2);
-      if (ambLight) {
-        ambLight.intensity = parseFloat(val);
-      }
-    }
-
     function loadModel() {
       loadingOverlay.style.opacity = '1';
-      loadingOverlay.style.pointerEvents = 'auto';
+      loadingOverlay.style.visibility = 'visible';
 
       const fbxLoader = new THREE.FBXLoader();
       fbxLoader.load(
@@ -428,13 +338,16 @@
           fitModelToScreen(currentModel);
           applyConceptMaterial();
 
-          setTimeout(() => {
+          // Instant fadeout as soon as model is rendered
+          requestAnimationFrame(() => {
             loadingOverlay.style.opacity = '0';
-            loadingOverlay.style.pointerEvents = 'none';
-          }, 150);
+            setTimeout(() => {
+              loadingOverlay.style.visibility = 'hidden';
+            }, 300);
+          });
         },
         (xhr) => {
-          if (xhr.lengthComputable) {
+          if (xhr.lengthComputable && xhr.total > 0) {
             const pct = Math.round((xhr.loaded / xhr.total) * 100);
             loadingProgress.textContent = `${pct}%`;
           }
