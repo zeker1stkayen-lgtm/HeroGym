@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест: Модель Shadow после Rigging (Tripo)</title>
+  <script src="./js/three.min.js"></script>
+  <script src="./js/OrbitControls.js"></script>
+  <script src="./js/GLTFLoader.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, #475569 0%, #1e293b 100%);
+      font-family: sans-serif;
+      color: #fff;
+    }
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    #loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      background: #1e293b;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <b>🦴 Модель после риггинга (shadow_rigged.glb)</b><br>
+    Костей: 54 (Mixamo скелет)<br>
+    Сетка: 83 сегмента Tripo
+  </div>
+  <div id="loading">Загрузка rigged модели...</div>
+
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1.0, 3.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 0.9, 0);
+
+    // Lights
+    const amb = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(amb);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+    dir.position.set(2, 4, 3);
+    scene.add(dir);
+    const dirBack = new THREE.DirectionalLight(0xa5b4fc, 0.8);
+    dirBack.position.set(-2, 3, -3);
+    scene.add(dirBack);
+
+    // Grid
+    const grid = new THREE.GridHelper(4, 20, 0x94a3b8, 0x334155);
+    scene.add(grid);
+
+    let mixer = null;
+    let skeletonHelper = null;
+
+    const loader = new THREE.GLTFLoader();
+    loader.load('./models/shadow_rigged.glb', (gltf) => {
+      document.getElementById('loading').style.display = 'none';
+      const model = gltf.scene;
+
+      // Colorize submeshes so they can be inspected
+      model.traverse(child => {
+        if (child.isMesh) {
+          child.material = new THREE.MeshStandardMaterial({
+            color: 0x3b384d,
+            roughness: 0.6,
+            metalness: 0.1
+          });
+        }
+      });
+
+      // Scale to human height (~1.8m)
+      model.scale.setScalar(1.8);
+      scene.add(model);
+
+      // Show skeleton bones
+      skeletonHelper = new THREE.SkeletonHelper(model);
+      skeletonHelper.material.linewidth = 2;
+      scene.add(skeletonHelper);
+    }, undefined, (err) => {
+      document.getElementById('loading').textContent = 'Ошибка загрузки: ' + err.message;
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
