@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Shadow Muscle — 3D Персонаж</title>
+  <title>Shadow Muscle — 3D Интерактивный Сканер Мышц</title>
 
   <!-- Local high-speed Three.js bundle (Zero external CDN dependency!) -->
   <script src="./js/three.min.js"></script>
@@ -24,7 +24,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: radial-gradient(circle at 50% 50%, #8c8f9f 0%, #6f7180 60%, #545663 100%);
+      background: radial-gradient(circle at 50% 45%, #2a2638 0%, #1a1724 60%, #110f18 100%);
       color: #f1f5f9;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
@@ -34,10 +34,245 @@
       display: block;
       touch-action: none;
     }
+
+    /* Top App Header & Hint */
+    .top-bar {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 25;
+    }
+    .hero-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #d8b4fe;
+      text-transform: uppercase;
+      background: rgba(15, 13, 22, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(168, 85, 247, 0.25);
+    }
+    .hint-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.85);
+      background: rgba(15, 13, 22, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 4px 9px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Floating Hotspot Muscle Info Card */
+    #muscleCard {
+      position: absolute;
+      top: 42px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      width: calc(100% - 24px);
+      max-width: 380px;
+      padding: 10px 14px;
+      background: rgba(22, 19, 32, 0.90);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 16px;
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 20px rgba(239, 68, 68, 0.18);
+      z-index: 30;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+    }
+    #muscleCard.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .card-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+    .card-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 0.02em;
+    }
+    .card-badge {
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.18);
+      padding: 2px 7px;
+      border-radius: 6px;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    .card-close {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      font-size: 11px;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: background 0.15s, color 0.15s;
+    }
+    .card-close:active {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+    .card-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      color: #cbd5e1;
+      margin-top: 3px;
+    }
+    .card-row-recovery {
+      font-weight: 700;
+      color: #6ee7b7;
+      margin-top: 4px;
+    }
+    .card-progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.10);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .card-progress-fill {
+      height: 100%;
+      width: 65%;
+      background: linear-gradient(90deg, #ef4444, #f59e0b);
+      border-radius: 4px;
+      transition: width 0.35s ease;
+    }
+
+    /* Quick Muscle Filter Chips (Above Legend) */
+    .chips-strip {
+      position: absolute;
+      bottom: 42px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 5px;
+      max-width: 96%;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding: 2px 4px;
+      z-index: 25;
+      scrollbar-width: none;
+    }
+    .chips-strip::-webkit-scrollbar {
+      display: none;
+    }
+    .muscle-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #e2e8f0;
+      background: rgba(26, 23, 36, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 5px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+      pointer-events: auto;
+      transition: transform 0.12s, border-color 0.15s, background 0.15s;
+    }
+    .muscle-chip:active {
+      transform: scale(0.95);
+    }
+    .muscle-chip.selected {
+      background: rgba(168, 85, 247, 0.25);
+      border-color: #a855f7;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+    }
+    .chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Bottom Recovery Status Legend */
+    .legend-bar {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      padding: 4px 10px;
+      background: rgba(15, 13, 22, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 16px;
+      z-index: 20;
+      max-width: 96%;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+    .legend-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-red { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.9); }
+    .dot-yellow { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.9); }
+    .dot-green { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.9); }
+
+    /* High-Speed Loading Overlay */
     #loadingOverlay {
       position: absolute;
       inset: 0;
-      background: #737583;
+      background: #1a1724;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -48,7 +283,7 @@
     .spinner {
       width: 44px;
       height: 44px;
-      border: 3px solid rgba(255, 255, 255, 0.2);
+      border: 3px solid rgba(255, 255, 255, 0.15);
       border-top-color: #a855f7;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
@@ -65,33 +300,51 @@
     }
     .loading-sub {
       font-size: 11px;
-      color: #e2e8f0;
+      color: #cbd5e1;
       margin-top: 4px;
       font-family: monospace;
-    }
-
-    .hint-bar {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 9px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.7);
-      background: rgba(0, 0, 0, 0.35);
-      padding: 4px 9px;
-      border-radius: 8px;
-      backdrop-filter: blur(4px);
-      pointer-events: none;
-      z-index: 20;
     }
   </style>
 </head>
 <body>
 
+  <!-- Top App Header -->
+  <div class="top-bar">
+    <div class="hero-title">ТЕНЬ • СТАТУС МЫШЦ</div>
+    <div class="hint-badge">🔄 360° • Тапни по точке</div>
+  </div>
+
   <!-- 3D Canvas -->
   <canvas id="c3d"></canvas>
 
-  <div class="hint-bar">🔄 360° вращение</div>
+  <!-- Floating Hotspot Info Card -->
+  <div id="muscleCard">
+    <div class="card-header">
+      <div class="card-title-row">
+        <span class="card-dot" id="cardDot"></span>
+        <span class="card-title" id="cardTitle">Грудные мышцы</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span class="card-badge" id="cardBadge">🔴 Нагрузка</span>
+        <div class="card-close" id="cardClose">✕</div>
+      </div>
+    </div>
+    <div class="card-row" id="cardWorkout">⏱ 18ч после тренировки (Жим лёжа 80кг)</div>
+    <div class="card-row card-row-recovery" id="cardRecovery">🔋 Восстановление: завтра к 14:00</div>
+    <div class="card-progress-bar">
+      <div class="card-progress-fill" id="cardFill"></div>
+    </div>
+  </div>
+
+  <!-- Quick Muscle Filter Chips -->
+  <div class="chips-strip" id="chipsStrip"></div>
+
+  <!-- Bottom Legend Bar -->
+  <div class="legend-bar">
+    <div class="legend-item"><span class="legend-dot dot-red"></span>0–48ч Нагрузка</div>
+    <div class="legend-item"><span class="legend-dot dot-yellow"></span>48–96ч Восстановление</div>
+    <div class="legend-item"><span class="legend-dot dot-green"></span>96ч+ Готовы</div>
+  </div>
 
   <!-- High-Speed Loading Overlay -->
   <div id="loadingOverlay">
@@ -106,6 +359,7 @@
     let podiumMesh = null;
     let podiumRimMesh = null;
     let shadowMesh = null;
+    let hotspotsGroup = null;
 
     let keyLightFront, keyLightBack, lumbarLight, topLight, fillLightLeft, fillLightRight, ambLight;
 
@@ -117,6 +371,112 @@
     const loadingText = document.getElementById('loadingText');
     const loadingProgress = document.getElementById('loadingProgress');
 
+    const card = document.getElementById('muscleCard');
+    const cardDot = document.getElementById('cardDot');
+    const cardTitle = document.getElementById('cardTitle');
+    const cardBadge = document.getElementById('cardBadge');
+    const cardWorkout = document.getElementById('cardWorkout');
+    const cardRecovery = document.getElementById('cardRecovery');
+    const cardFill = document.getElementById('cardFill');
+    const cardClose = document.getElementById('cardClose');
+    const chipsStrip = document.getElementById('chipsStrip');
+
+    let activeHotspotId = 'chest';
+    let targetAzimuth = null;
+    let isAutoRotating = false;
+
+    // ==========================================
+    // RECOVERY HOTSPOTS DATA DEFINITION
+    // ==========================================
+    const HOTSPOTS_DATA = [
+      {
+        id: 'chest',
+        name: 'Грудные мышцы (Pectoralis)',
+        shortName: 'Грудь',
+        statusBadge: '🔴 Нагрузка (85%)',
+        badgeColor: '#ef4444',
+        badgeBg: 'rgba(239, 68, 68, 0.18)',
+        badgeBorder: 'rgba(239, 68, 68, 0.4)',
+        dotClass: 'dot-red',
+        colorHex: '#ef4444',
+        workoutInfo: '⏱ 18ч после тренировки (Жим лёжа 80кг • 4x8)',
+        recoveryInfo: '🔋 Полное восстановление: завтра к 14:00',
+        recoveryPercent: 65,
+        fillGradient: 'linear-gradient(90deg, #ef4444, #f59e0b)',
+        // 3D position relative to 2.0m tall character (Feet at Y=0)
+        pos: new THREE.Vector3(0, 1.34, 0.23),
+        targetAngle: 0 // Front view
+      },
+      {
+        id: 'arms',
+        name: 'Руки и дельты (Бицепс / Плечи)',
+        shortName: 'Руки',
+        statusBadge: '🟡 Восстановление (45%)',
+        badgeColor: '#f59e0b',
+        badgeBg: 'rgba(245, 158, 11, 0.18)',
+        badgeBorder: 'rgba(245, 158, 11, 0.4)',
+        dotClass: 'dot-yellow',
+        colorHex: '#f59e0b',
+        workoutInfo: '⏱ 52ч после тренировки (Подъемы гантелей 16кг)',
+        recoveryInfo: '🔋 Фаза компенсации мышечных волокон',
+        recoveryPercent: 80,
+        fillGradient: 'linear-gradient(90deg, #f59e0b, #10b981)',
+        pos: new THREE.Vector3(-0.46, 1.32, 0.08),
+        targetAngle: 0.35
+      },
+      {
+        id: 'abs',
+        name: 'Пресс (Rectus Abdominis)',
+        shortName: 'Пресс',
+        statusBadge: '🟢 Отдохнули (100%)',
+        badgeColor: '#10b981',
+        badgeBg: 'rgba(16, 185, 129, 0.18)',
+        badgeBorder: 'rgba(16, 185, 129, 0.4)',
+        dotClass: 'dot-green',
+        colorHex: '#10b981',
+        workoutInfo: '⏱ 110ч без нагрузки (Скручивания на наклонной)',
+        recoveryInfo: '⚡ 100% готовность к максимальным нагрузкам',
+        recoveryPercent: 100,
+        fillGradient: 'linear-gradient(90deg, #10b981, #34d399)',
+        pos: new THREE.Vector3(0, 1.05, 0.23),
+        targetAngle: 0
+      },
+      {
+        id: 'quads',
+        name: 'Квадрицепсы (Quadriceps)',
+        shortName: 'Ноги',
+        statusBadge: '🟡 Восстановление (50%)',
+        badgeColor: '#f59e0b',
+        badgeBg: 'rgba(245, 158, 11, 0.18)',
+        badgeBorder: 'rgba(245, 158, 11, 0.4)',
+        dotClass: 'dot-yellow',
+        colorHex: '#f59e0b',
+        workoutInfo: '⏱ 46ч после тренировки (Присед со штангой 100кг)',
+        recoveryInfo: '🔋 Синтез гликогена, готовность через 24ч',
+        recoveryPercent: 75,
+        fillGradient: 'linear-gradient(90deg, #f59e0b, #10b981)',
+        pos: new THREE.Vector3(0.20, 0.65, 0.17),
+        targetAngle: -0.25
+      },
+      {
+        id: 'back',
+        name: 'Широчайшие и Трапеции (Back)',
+        shortName: 'Спина',
+        statusBadge: '🟢 Отдохнули (100%)',
+        badgeColor: '#10b981',
+        badgeBg: 'rgba(16, 185, 129, 0.18)',
+        badgeBorder: 'rgba(16, 185, 129, 0.4)',
+        dotClass: 'dot-green',
+        colorHex: '#10b981',
+        workoutInfo: '⏱ 120ч без нагрузки (Тяга штанги в наклоне)',
+        recoveryInfo: '⚡ Мышцы спины полностью восстановлены',
+        recoveryPercent: 100,
+        fillGradient: 'linear-gradient(90deg, #10b981, #34d399)',
+        pos: new THREE.Vector3(0, 1.30, -0.22),
+        targetAngle: Math.PI // 180° Back view!
+      }
+    ];
+
     function createContactShadowTexture() {
       const c = document.createElement('canvas');
       c.width = 512;
@@ -124,13 +484,60 @@
       const ctx = c.getContext('2d');
 
       const grad = ctx.createRadialGradient(256, 256, 40, 256, 256, 250);
-      grad.addColorStop(0.0, 'rgba(12, 10, 20, 0.65)');
-      grad.addColorStop(0.4, 'rgba(12, 10, 20, 0.38)');
+      grad.addColorStop(0.0, 'rgba(12, 10, 20, 0.70)');
+      grad.addColorStop(0.4, 'rgba(12, 10, 20, 0.40)');
       grad.addColorStop(0.75, 'rgba(12, 10, 20, 0.12)');
       grad.addColorStop(1.0, 'rgba(12, 10, 20, 0.0)');
 
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 512, 512);
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createHotspotCanvasTexture(colorHex) {
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+
+      // Outer pulse ring
+      ctx.beginPath();
+      ctx.arc(64, 64, 52, 0, Math.PI * 2);
+      ctx.strokeStyle = colorHex;
+      ctx.lineWidth = 5;
+      ctx.globalAlpha = 0.5;
+      ctx.stroke();
+
+      // Soft glow aura
+      const grad = ctx.createRadialGradient(64, 64, 10, 64, 64, 48);
+      grad.addColorStop(0, colorHex);
+      grad.addColorStop(0.65, colorHex);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.globalAlpha = 0.35;
+      ctx.fill();
+
+      // Mid bright ring
+      ctx.beginPath();
+      ctx.arc(64, 64, 28, 0, Math.PI * 2);
+      ctx.strokeStyle = colorHex;
+      ctx.lineWidth = 5;
+      ctx.globalAlpha = 0.95;
+      ctx.stroke();
+
+      // Core solid dot
+      ctx.beginPath();
+      ctx.arc(64, 64, 16, 0, Math.PI * 2);
+      ctx.fillStyle = colorHex;
+      ctx.globalAlpha = 1.0;
+      ctx.fill();
+
+      // Center white pip
+      ctx.beginPath();
+      ctx.arc(64, 64, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
 
       return new THREE.CanvasTexture(c);
     }
@@ -151,7 +558,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.18;
+      renderer.toneMappingExposure = 1.15;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -166,10 +573,16 @@
       controls.enableZoom = false;
       controls.enablePan = false;
 
+      controls.addEventListener('start', () => {
+        // User touched canvas, cancel auto-rotation glide
+        isAutoRotating = false;
+        targetAzimuth = null;
+      });
+
       // ==========================================
       // LIGHTING RIG
       // ==========================================
-      ambLight = new THREE.AmbientLight(0x353246, 0.38);
+      ambLight = new THREE.AmbientLight(0x353246, 0.40);
       scene.add(ambLight);
 
       // Key Raking Light Front (Pectorals, Abs)
@@ -217,9 +630,9 @@
 
       const podiumGeo = new THREE.CylinderGeometry(PODIUM_RADIUS, PODIUM_RADIUS * 1.04, PODIUM_HEIGHT, 48);
       const podiumMat = new THREE.MeshStandardMaterial({
-        color: 0x686a77,
+        color: 0x484658,
         roughness: 0.50,
-        metalness: 0.08
+        metalness: 0.12
       });
       podiumMesh = new THREE.Mesh(podiumGeo, podiumMat);
       podiumMesh.position.set(0, -PODIUM_HEIGHT / 2, 0);
@@ -229,9 +642,11 @@
 
       const rimGeo = new THREE.TorusGeometry(PODIUM_RADIUS, 0.012, 12, 48);
       const rimMat = new THREE.MeshStandardMaterial({
-        color: 0xa78bfa,
+        color: 0xa855f7,
+        emissive: 0xa855f7,
+        emissiveIntensity: 0.3,
         roughness: 0.2,
-        metalness: 0.4
+        metalness: 0.5
       });
       podiumRimMesh = new THREE.Mesh(rimGeo, rimMat);
       podiumRimMesh.rotation.x = Math.PI / 2;
@@ -251,7 +666,7 @@
       shadowMesh.position.y = -PODIUM_HEIGHT - 0.002;
       scene.add(shadowMesh);
 
-      // High-speed optimized textures (2K instead of bloated 4K)
+      // High-speed optimized textures
       conceptDiffuseTex = textureLoader.load('./textures/diffuse_concept_opt.jpg');
       conceptDiffuseTex.encoding = THREE.sRGBEncoding;
 
@@ -260,8 +675,125 @@
 
       window.addEventListener('resize', onWindowResize);
 
+      buildQuickChipsUI();
+      buildHotspots();
+      setupRaycasting();
+
+      cardClose.addEventListener('click', () => {
+        card.classList.remove('active');
+        document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('selected'));
+      });
+
       loadModel();
       animate();
+    }
+
+    const interactiveSprites = [];
+
+    function buildHotspots() {
+      hotspotsGroup = new THREE.Group();
+      scene.add(hotspotsGroup);
+
+      HOTSPOTS_DATA.forEach(data => {
+        const tex = createHotspotCanvasTexture(data.colorHex);
+        const mat = new THREE.SpriteMaterial({
+          map: tex,
+          transparent: true,
+          depthWrite: false,
+          depthTest: false
+        });
+
+        const sprite = new THREE.Sprite(mat);
+        sprite.position.copy(data.pos);
+        sprite.scale.set(0.18, 0.18, 1);
+        sprite.userData = data;
+
+        hotspotsGroup.add(sprite);
+        interactiveSprites.push(sprite);
+      });
+    }
+
+    function buildQuickChipsUI() {
+      chipsStrip.innerHTML = '';
+      HOTSPOTS_DATA.forEach(data => {
+        const chip = document.createElement('div');
+        chip.className = 'muscle-chip' + (data.id === activeHotspotId ? ' selected' : '');
+        chip.id = 'chip-' + data.id;
+        chip.innerHTML = `<span class="chip-dot ${data.dotClass}"></span>${data.shortName}`;
+
+        chip.addEventListener('click', () => {
+          selectHotspot(data);
+        });
+
+        chipsStrip.appendChild(chip);
+      });
+    }
+
+    function selectHotspot(data) {
+      if (!data) return;
+      activeHotspotId = data.id;
+
+      // Update Card Content
+      cardDot.style.background = data.colorHex;
+      cardDot.style.boxShadow = `0 0 10px ${data.colorHex}`;
+      cardTitle.textContent = data.name;
+
+      cardBadge.textContent = data.statusBadge;
+      cardBadge.style.color = data.badgeColor;
+      cardBadge.style.background = data.badgeBg;
+      cardBadge.style.borderColor = data.badgeBorder;
+
+      cardWorkout.textContent = data.workoutInfo;
+      cardRecovery.textContent = data.recoveryInfo;
+
+      cardFill.style.width = data.recoveryPercent + '%';
+      cardFill.style.background = data.fillGradient;
+
+      card.style.borderColor = data.colorHex;
+      card.style.boxShadow = `0 12px 32px rgba(0, 0, 0, 0.55), 0 0 20px ${data.colorHex}33`;
+      card.classList.add('active');
+
+      // Update Chips Selection
+      document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('selected'));
+      const activeChip = document.getElementById('chip-' + data.id);
+      if (activeChip) activeChip.classList.add('selected');
+
+      // Smooth auto-rotation to face the selected muscle
+      if (data.targetAngle !== undefined) {
+        targetAzimuth = data.targetAngle;
+        isAutoRotating = true;
+      }
+    }
+
+    function setupRaycasting() {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      let pointerDownPos = { x: 0, y: 0 };
+
+      window.addEventListener('pointerdown', (e) => {
+        pointerDownPos = { x: e.clientX, y: e.clientY };
+      });
+
+      window.addEventListener('pointerup', (e) => {
+        // Ignore if dragged to orbit
+        const dx = Math.abs(e.clientX - pointerDownPos.x);
+        const dy = Math.abs(e.clientY - pointerDownPos.y);
+        if (dx > 6 || dy > 6) return;
+
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(interactiveSprites, false);
+
+        if (intersects.length > 0) {
+          const hit = intersects[0].object;
+          if (hit.userData) {
+            selectHotspot(hit.userData);
+          }
+        }
+      });
     }
 
     function fitModelToScreen(model) {
@@ -313,6 +845,9 @@
 
       camera.position.set(0, targetY, dist);
       controls.update();
+
+      // Show initial selected card (Chest)
+      selectHotspot(HOTSPOTS_DATA[0]);
     }
 
     function applyConceptMaterial() {
@@ -384,8 +919,39 @@
       }
     }
 
-    function animate() {
+    function animate(time) {
       requestAnimationFrame(animate);
+
+      // Hotspot pulsating animation
+      const t = (time || 0) * 0.003;
+      interactiveSprites.forEach(sprite => {
+        const isSelected = sprite.userData && sprite.userData.id === activeHotspotId;
+        const base = isSelected ? 0.22 : 0.17;
+        const s = base + Math.sin(t * (isSelected ? 4 : 2.5)) * (isSelected ? 0.03 : 0.015);
+        sprite.scale.set(s, s, 1);
+      });
+
+      // Smooth camera auto-glide to target angle when muscle selected
+      if (isAutoRotating && targetAzimuth !== null) {
+        const dist = Math.hypot(camera.position.x, camera.position.z);
+        const currentAngle = Math.atan2(camera.position.x, camera.position.z);
+        let diff = targetAzimuth - currentAngle;
+
+        // Wrap difference to [-PI, +PI]
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+
+        if (Math.abs(diff) < 0.015) {
+          isAutoRotating = false;
+          targetAzimuth = null;
+        } else {
+          const step = diff * 0.12;
+          const nextAngle = currentAngle + step;
+          camera.position.x = dist * Math.sin(nextAngle);
+          camera.position.z = dist * Math.cos(nextAngle);
+        }
+      }
+
       controls.update();
       renderer.render(scene, camera);
     }
