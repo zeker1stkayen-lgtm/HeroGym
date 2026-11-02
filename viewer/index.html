@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Shadow Muscle — 3D Персонаж</title>
+  <title>Shadow Muscle — 3D Персонаж и Мышечная Карта</title>
 
   <!-- Local high-speed Three.js bundle (Zero external CDN dependency!) -->
   <script src="./js/three.min.js"></script>
   <script src="./js/OrbitControls.js"></script>
   <script src="./js/fflate.min.js"></script>
-  <script src="./js/FBXLoader.js"></script>
+  <script src="./js/GLTFLoader.js"></script>
 
   <style>
     * {
@@ -24,7 +24,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: radial-gradient(circle at 50% 50%, #8c8f9f 0%, #6f7180 60%, #545663 100%);
+      background: radial-gradient(circle at 50% 45%, #6a6c7b 0%, #4b4d5a 65%, #353641 100%);
       color: #f1f5f9;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
@@ -34,10 +34,12 @@
       display: block;
       touch-action: none;
     }
+
+    /* Loading Overlay */
     #loadingOverlay {
       position: absolute;
       inset: 0;
-      background: #737583;
+      background: #4b4d5a;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -65,9 +67,111 @@
     }
     .loading-sub {
       font-size: 11px;
-      color: #e2e8f0;
+      color: #cbd5e1;
       margin-top: 4px;
       font-family: monospace;
+    }
+
+    /* Floating Legend */
+    .legend-bar {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      padding: 6px 10px;
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      z-index: 20;
+      max-width: 96%;
+      overflow-x: auto;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 12px;
+    }
+    .legend-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .dot-red { background: #E94F55; box-shadow: 0 0 6px rgba(233, 79, 85, 0.8); }
+    .dot-yellow { background: #E8BC50; box-shadow: 0 0 6px rgba(232, 188, 80, 0.8); }
+    .dot-green { background: #56B989; box-shadow: 0 0 6px rgba(86, 185, 137, 0.8); }
+    .dot-gray { background: #646B78; }
+
+    /* Interactive Muscle Info Pill */
+    #muscleTooltip {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 14px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 20px;
+      z-index: 25;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #muscleTooltip.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .tooltip-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tooltip-status {
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+    .tooltip-desc {
+      font-size: 9.5px;
+      color: #cbd5e1;
+      margin-top: 2px;
+    }
+
+    /* 360 Hint */
+    .hint-bar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 9px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.65);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 3px 8px;
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      pointer-events: none;
     }
   </style>
 </head>
@@ -76,11 +180,31 @@
   <!-- 3D Canvas -->
   <canvas id="c3d"></canvas>
 
+  <div class="hint-bar">🔄 360° • Тапни по мышце</div>
+
+  <!-- Interactive Muscle Info Pill -->
+  <div id="muscleTooltip">
+    <div class="tooltip-title" id="ttTitle">
+      <span class="legend-dot" id="ttDot"></span>
+      <span id="ttName">Мышца</span>
+    </div>
+    <div class="tooltip-status" id="ttStatus">Статус</div>
+    <div class="tooltip-desc" id="ttDesc">Описание</div>
+  </div>
+
   <!-- High-Speed Loading Overlay -->
   <div id="loadingOverlay">
     <div class="spinner"></div>
     <div class="loading-title" id="loadingText">Загрузка Тени...</div>
     <div class="loading-sub" id="loadingProgress">0%</div>
+  </div>
+
+  <!-- Recovery Status Legend -->
+  <div class="legend-bar">
+    <div class="legend-item"><span class="legend-dot dot-red"></span>0–48ч (Нагрузка)</div>
+    <div class="legend-item"><span class="legend-dot dot-yellow"></span>48–96ч (Восстановление)</div>
+    <div class="legend-item"><span class="legend-dot dot-green"></span>96ч+ (Готовы)</div>
+    <div class="legend-item"><span class="legend-dot dot-gray"></span>>14д (Отдых)</div>
   </div>
 
   <script>
@@ -89,16 +213,227 @@
     let podiumMesh = null;
     let podiumRimMesh = null;
     let shadowMesh = null;
+    let eyesMesh = null;
 
     let keyLightFront, keyLightBack, lumbarLight, topLight, fillLightLeft, fillLightRight, ambLight;
-
-    const textureLoader = new THREE.TextureLoader();
-    let conceptDiffuseTex, normalTex, emissiveTex;
 
     const canvas = document.getElementById('c3d');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
     const loadingProgress = document.getElementById('loadingProgress');
+
+    const tooltip = document.getElementById('muscleTooltip');
+    const ttDot = document.getElementById('ttDot');
+    const ttName = document.getElementById('ttName');
+    const ttStatus = document.getElementById('ttStatus');
+    const ttDesc = document.getElementById('ttDesc');
+    let tooltipTimeout = null;
+
+    // ==========================================
+    // MUSCLE RECOVERY DATA SPECIFICATION
+    // ==========================================
+    const MUSCLE_STATUS = {
+      // 1. FATIGUED / RECENT WORKOUT (0-48h) -> RED (#E94F55)
+      chest: {
+        name: 'Грудные мышцы (Pectoralis)',
+        color: 0xE94F55,
+        hex: '#E94F55',
+        dotClass: 'dot-red',
+        status: '🔴 Нагрузка (0–48ч)',
+        statusColor: '#ff7b80',
+        desc: 'Недавняя тренировка: фаза активного восстановления волокон'
+      },
+      deltoids: {
+        name: 'Дельтовидные мышцы (Shoulders)',
+        color: 0xE94F55,
+        hex: '#E94F55',
+        dotClass: 'dot-red',
+        status: '🔴 Нагрузка (0–48ч)',
+        statusColor: '#ff7b80',
+        desc: 'Плечи нагружены: регенерация миофибрилл'
+      },
+
+      // 2. INTERMEDIATE RECOVERY (48-96h) -> YELLOW (#E8BC50)
+      biceps_triceps: {
+        name: 'Руки (Бицепс / Трицепс)',
+        color: 0xE8BC50,
+        hex: '#E8BC50',
+        dotClass: 'dot-yellow',
+        status: '🟡 Восстановление (48–96ч)',
+        statusColor: '#fcd34d',
+        desc: 'Синтез белка и суперкомпенсация мышечных волокон'
+      },
+      quads: {
+        name: 'Квадрицепсы (Quadriceps)',
+        color: 0xE8BC50,
+        hex: '#E8BC50',
+        dotClass: 'dot-yellow',
+        status: '🟡 Восстановление (48–96ч)',
+        statusColor: '#fcd34d',
+        desc: 'Ноги на стадии завершения восстановления'
+      },
+      glutes_pelvis: {
+        name: 'Ягодичные мышцы (Glutes)',
+        color: 0xE8BC50,
+        hex: '#E8BC50',
+        dotClass: 'dot-yellow',
+        status: '🟡 Восстановление (48–96ч)',
+        statusColor: '#fcd34d',
+        desc: 'Стадия суперкомпенсации'
+      },
+
+      // 3. FULLY RESTED (96h-14d) -> GREEN (#56B989)
+      abs: {
+        name: 'Пресс (Rectus Abdominis)',
+        color: 0x56B989,
+        hex: '#56B989',
+        dotClass: 'dot-green',
+        status: '🟢 Отдохнули (Готовы к бою)',
+        statusColor: '#6ee7b7',
+        desc: '100% готовность к максимальным нагрузкам и упражнениям'
+      },
+      obliques: {
+        name: 'Косые мышцы живота (Obliques)',
+        color: 0x56B989,
+        hex: '#56B989',
+        dotClass: 'dot-green',
+        status: '🟢 Отдохнули (Готовы к бою)',
+        statusColor: '#6ee7b7',
+        desc: 'Кор в идеальном тонусе и готов к тренировке'
+      },
+      lats: {
+        name: 'Широчайшие спины (Latissimus)',
+        color: 0x56B989,
+        hex: '#56B989',
+        dotClass: 'dot-green',
+        status: '🟢 Отдохнули (Готовы к бою)',
+        statusColor: '#6ee7b7',
+        desc: 'Спина полностью готова к тяжелым тягам'
+      },
+      traps: {
+        name: 'Трапеции (Trapezius)',
+        color: 0x56B989,
+        hex: '#56B989',
+        dotClass: 'dot-green',
+        status: '🟢 Отдохнули (Готовы к бою)',
+        statusColor: '#6ee7b7',
+        desc: 'Верх спины полностью восстановился'
+      },
+
+      // 4. INACTIVE (>14d) -> GRAY (#646B78)
+      calves: {
+        name: 'Икры и голени (Calves)',
+        color: 0x646B78,
+        hex: '#646B78',
+        dotClass: 'dot-gray',
+        status: '⚪ Без нагрузки (>14 дней)',
+        statusColor: '#94a3b8',
+        desc: 'Рекомендуется включить подъемы на носки в план'
+      },
+      forearms: {
+        name: 'Предплечья (Forearms)',
+        color: 0x646B78,
+        hex: '#646B78',
+        dotClass: 'dot-gray',
+        status: '⚪ Без нагрузки (>14 дней)',
+        statusColor: '#94a3b8',
+        desc: 'Хват и предплечья давно не получали стимула'
+      },
+
+      // 5. BASE DARK PURPLE (#24222e)
+      head: {
+        name: 'Тень (Shadow)',
+        color: 0x24222e,
+        hex: '#24222e',
+        dotClass: 'dot-gray',
+        status: 'База персонажа',
+        statusColor: '#c084fc',
+        desc: 'Фирменный аниме-силуэт Тени'
+      },
+      fists: {
+        name: 'Ударные кулаки',
+        color: 0x24222e,
+        hex: '#24222e',
+        dotClass: 'dot-gray',
+        status: 'Экипировка',
+        statusColor: '#c084fc',
+        desc: 'Силовые кулаки героя'
+      },
+      boots: {
+        name: 'Ботинки',
+        color: 0x24222e,
+        hex: '#24222e',
+        dotClass: 'dot-gray',
+        status: 'Экипировка',
+        statusColor: '#c084fc',
+        desc: 'Тяжелая устойчивая обувь'
+      }
+    };
+
+    function classifyMesh(p) {
+      // Head / Hair / Eyes
+      if (p.cy >= 0.74) {
+        return 'head';
+      }
+      // Boots / Feet
+      if (p.cy < 0.11) {
+        return 'boots';
+      }
+      // Calves
+      if (p.cy >= 0.11 && p.cy < 0.25) {
+        return 'calves';
+      }
+      // Fists / Hands / Wrists
+      if (p.idx === 46 || (p.cy < 0.44 && Math.abs(p.cx) > 0.23)) {
+        return 'fists';
+      }
+      // Lower leg / Knee / Quads transition
+      if (p.cy >= 0.25 && p.cy < 0.31 && Math.abs(p.cx) > 0.04) {
+        return 'quads';
+      }
+      // Quads (Thighs) / Hamstrings
+      if (p.cy >= 0.31 && p.cy < 0.42 && Math.abs(p.cx) > 0.04) {
+        return 'quads';
+      }
+      // Pelvis / Glutes
+      if (p.cy >= 0.38 && p.cy < 0.46 && Math.abs(p.cx) <= 0.10) {
+        return 'glutes_pelvis';
+      }
+      // Forearms
+      if (p.cy >= 0.44 && p.cy < 0.52 && Math.abs(p.cx) > 0.23) {
+        return 'forearms';
+      }
+      // Abs (Lower: ~0.45, Mid: ~0.509, Upper: ~0.564)
+      if (p.cy >= 0.44 && p.cy < 0.58 && Math.abs(p.cx) <= 0.065 && p.cz > 0.06) {
+        return 'abs';
+      }
+      // Obliques / Lower flanks
+      if (p.cy >= 0.48 && p.cy < 0.56 && Math.abs(p.cx) > 0.04 && Math.abs(p.cx) < 0.18 && p.cz >= 0.00) {
+        return 'obliques';
+      }
+      // Biceps / Triceps (Upper arms)
+      if (p.cy >= 0.52 && p.cy < 0.62 && Math.abs(p.cx) > 0.18) {
+        return 'biceps_triceps';
+      }
+      // Deltoids (Shoulders)
+      if (p.cy >= 0.62 && p.cy < 0.74 && Math.abs(p.cx) > 0.14) {
+        return 'deltoids';
+      }
+      // Chest / Pectorals
+      if (p.cy >= 0.59 && p.cy < 0.72 && Math.abs(p.cx) <= 0.15 && p.cz > 0.02) {
+        return 'chest';
+      }
+      // Lats (Latissimus dorsi)
+      if (p.cy >= 0.53 && p.cy < 0.64 && Math.abs(p.cx) <= 0.18 && p.cz <= 0.00) {
+        return 'lats';
+      }
+      // Traps (Trapezius)
+      if (p.cy >= 0.63 && p.cy < 0.74 && p.cz <= 0.00) {
+        return 'traps';
+      }
+
+      return 'head'; // Fallback
+    }
 
     function createContactShadowTexture() {
       const c = document.createElement('canvas');
@@ -114,6 +449,26 @@
 
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 512, 512);
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    function createEyeGlowTexture() {
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createRadialGradient(64, 64, 10, 64, 64, 60);
+      grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+      grad.addColorStop(0.4, 'rgba(255, 255, 255, 0.95)');
+      grad.addColorStop(0.7, 'rgba(235, 245, 255, 0.5)');
+      grad.addColorStop(1.0, 'rgba(200, 220, 255, 0.0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(64, 64, 28, 54, 0, 0, Math.PI * 2);
+      ctx.fill();
 
       return new THREE.CanvasTexture(c);
     }
@@ -152,7 +507,7 @@
       // ==========================================
       // LIGHTING RIG
       // ==========================================
-      ambLight = new THREE.AmbientLight(0x353246, 0.38);
+      ambLight = new THREE.AmbientLight(0x353246, 0.45);
       scene.add(ambLight);
 
       // Key Raking Light Front (Pectorals, Abs)
@@ -234,14 +589,8 @@
       shadowMesh.position.y = -PODIUM_HEIGHT - 0.002;
       scene.add(shadowMesh);
 
-      // High-speed optimized textures (2K instead of bloated 4K)
-      conceptDiffuseTex = textureLoader.load('./textures/diffuse_concept_opt.jpg');
-      conceptDiffuseTex.encoding = THREE.sRGBEncoding;
-
-      normalTex = textureLoader.load('./textures/normal_opt.png');
-      emissiveTex = textureLoader.load('./textures/emissive_eyes_opt.png');
-
       window.addEventListener('resize', onWindowResize);
+      setupRaycasting();
 
       loadModel();
       animate();
@@ -250,9 +599,7 @@
     function fitModelToScreen(model) {
       if (!model) return;
 
-      // In this FBX, the front chest/face points along +X and shoulders are along Z.
-      // Rotate -90° (-Math.PI / 2) so chest, abs and glowing eyes face directly forward into the camera!
-      model.rotation.y = -Math.PI / 2;
+      model.rotation.y = 0; // Model naturally faces forward (+Z)
       model.updateMatrixWorld(true);
 
       let box = new THREE.Box3().setFromObject(model);
@@ -270,7 +617,7 @@
       const center = new THREE.Vector3();
       box.getCenter(center);
 
-      // Place character feet on podium top at Y = 0
+      // Place character feet cleanly on podium top at Y = 0
       model.position.x = -center.x;
       model.position.z = -center.z;
       model.position.y = -box.min.y;
@@ -298,45 +645,167 @@
       controls.update();
     }
 
-    function applyConceptMaterial() {
-      if (!currentModel) return;
+    function addGlowingEyes(parentGroup) {
+      const eyeGeo = new THREE.PlaneGeometry(0.026, 0.052);
+      const eyeTex = createEyeGlowTexture();
+      const eyeMat = new THREE.MeshBasicMaterial({
+        map: eyeTex,
+        color: 0xffffff,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
 
-      currentModel.traverse(child => {
+      const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeLeft.position.set(-0.038, 0.835, 0.093);
+
+      const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeRight.position.set(0.038, 0.835, 0.093);
+
+      const eyeGroup = new THREE.Group();
+      eyeGroup.add(eyeLeft);
+      eyeGroup.add(eyeRight);
+      parentGroup.add(eyeGroup);
+    }
+
+    const interactiveMeshes = [];
+
+    function applyRecoveryMaterials(model) {
+      let submeshIdx = 0;
+      model.traverse(child => {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
 
           if (child.geometry) {
             child.geometry.computeVertexNormals();
-          }
+            child.geometry.computeBoundingBox();
 
-          child.material = new THREE.MeshStandardMaterial({
-            map: conceptDiffuseTex,
-            normalMap: normalTex,
-            normalScale: new THREE.Vector2(2.4, 2.4),
-            emissiveMap: emissiveTex,
-            emissive: new THREE.Color(0xffffff),
-            emissiveIntensity: 1.8,
-            roughness: 0.68,
-            metalness: 0.04
-          });
+            const bbox = child.geometry.boundingBox;
+            const center = new THREE.Vector3();
+            bbox.getCenter(center);
+            const size = new THREE.Vector3();
+            bbox.getSize(size);
+
+            const pInfo = {
+              idx: submeshIdx,
+              cx: center.x,
+              cy: center.y,
+              cz: center.z,
+              sx: size.x,
+              sy: size.y,
+              sz: size.z
+            };
+
+            const groupKey = classifyMesh(pInfo);
+            const data = MUSCLE_STATUS[groupKey] || MUSCLE_STATUS.head;
+
+            const isBase = (groupKey === 'head' || groupKey === 'fists' || groupKey === 'boots');
+
+            child.material = new THREE.MeshStandardMaterial({
+              color: data.color,
+              roughness: isBase ? 0.65 : 0.42,
+              metalness: isBase ? 0.08 : 0.12,
+              emissive: isBase ? 0x000000 : new THREE.Color(data.color),
+              emissiveIntensity: isBase ? 0.0 : 0.18
+            });
+
+            child.userData = {
+              groupKey: groupKey,
+              name: data.name,
+              status: data.status,
+              statusColor: data.statusColor,
+              desc: data.desc,
+              dotClass: data.dotClass,
+              originalColor: data.color,
+              originalEmissiveIntensity: isBase ? 0.0 : 0.18,
+              isBase: isBase
+            };
+
+            interactiveMeshes.push(child);
+            submeshIdx++;
+          }
         }
       });
+
+      // Add the glowing eyes to the character head
+      addGlowingEyes(model);
+    }
+
+    function setupRaycasting() {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      let pointerDownPos = { x: 0, y: 0 };
+      let lastHighlighted = null;
+
+      window.addEventListener('pointerdown', (e) => {
+        pointerDownPos = { x: e.clientX, y: e.clientY };
+      });
+
+      window.addEventListener('pointerup', (e) => {
+        // Prevent click trigger if the user dragged to rotate the model
+        const dx = Math.abs(e.clientX - pointerDownPos.x);
+        const dy = Math.abs(e.clientY - pointerDownPos.y);
+        if (dx > 6 || dy > 6) return;
+
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(interactiveMeshes, false);
+
+        if (intersects.length > 0) {
+          const hit = intersects[0].object;
+          showTooltipForMesh(hit);
+          pulseMesh(hit);
+        }
+      });
+
+      function pulseMesh(mesh) {
+        if (!mesh || !mesh.userData) return;
+        const mat = mesh.material;
+        const origEmissive = mesh.userData.originalEmissiveIntensity;
+        mat.emissiveIntensity = origEmissive + 0.6;
+        setTimeout(() => {
+          mat.emissiveIntensity = origEmissive;
+        }, 350);
+      }
+    }
+
+    function showTooltipForMesh(mesh) {
+      const d = mesh.userData;
+      if (!d) return;
+
+      ttName.textContent = d.name;
+      ttStatus.textContent = d.status;
+      ttStatus.style.color = d.statusColor;
+      ttDesc.textContent = d.desc;
+
+      ttDot.className = 'legend-dot ' + d.dotClass;
+
+      tooltip.classList.add('visible');
+
+      if (tooltipTimeout) clearTimeout(tooltipTimeout);
+      tooltipTimeout = setTimeout(() => {
+        tooltip.classList.remove('visible');
+      }, 4000);
     }
 
     function loadModel() {
       loadingOverlay.style.opacity = '1';
       loadingOverlay.style.visibility = 'visible';
 
-      const fbxLoader = new THREE.FBXLoader();
-      fbxLoader.load(
-        './models/shadow_muscle.fbx',
-        (fbx) => {
-          currentModel = fbx;
+      const loader = new THREE.GLTFLoader();
+      loader.load(
+        './models/shadow_segmented.glb',
+        (gltf) => {
+          currentModel = gltf.scene;
           scene.add(currentModel);
 
+          applyRecoveryMaterials(currentModel);
           fitModelToScreen(currentModel);
-          applyConceptMaterial();
 
           // Instant fadeout as soon as model is rendered
           requestAnimationFrame(() => {
@@ -353,7 +822,8 @@
           }
         },
         (err) => {
-          loadingText.textContent = `Ошибка: ${err.message}`;
+          console.error(err);
+          loadingText.textContent = `Ошибка: ${err.message || 'Не удалось загрузить модель'}`;
         }
       );
     }
