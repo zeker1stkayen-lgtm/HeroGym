@@ -381,7 +381,7 @@
     const cardClose = document.getElementById('cardClose');
     const chipsStrip = document.getElementById('chipsStrip');
 
-    let activeHotspotId = 'chest';
+    let activeHotspotId = null;
     let targetAzimuth = null;
     let isAutoRotating = false;
 
@@ -681,6 +681,7 @@
 
       cardClose.addEventListener('click', () => {
         card.classList.remove('active');
+        activeHotspotId = null;
         document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('selected'));
       });
 
@@ -722,7 +723,13 @@
         chip.innerHTML = `<span class="chip-dot ${data.dotClass}"></span>${data.shortName}`;
 
         chip.addEventListener('click', () => {
-          selectHotspot(data);
+          if (activeHotspotId === data.id && card.classList.contains('active')) {
+            card.classList.remove('active');
+            activeHotspotId = null;
+            chip.classList.remove('selected');
+          } else {
+            selectHotspot(data);
+          }
         });
 
         chipsStrip.appendChild(chip);
@@ -790,7 +797,13 @@
         if (intersects.length > 0) {
           const hit = intersects[0].object;
           if (hit.userData) {
-            selectHotspot(hit.userData);
+            if (activeHotspotId === hit.userData.id && card.classList.contains('active')) {
+              card.classList.remove('active');
+              activeHotspotId = null;
+              document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('selected'));
+            } else {
+              selectHotspot(hit.userData);
+            }
           }
         }
       });
@@ -845,9 +858,6 @@
 
       camera.position.set(0, targetY, dist);
       controls.update();
-
-      // Show initial selected card (Chest)
-      selectHotspot(HOTSPOTS_DATA[0]);
     }
 
     function applyConceptMaterial() {
