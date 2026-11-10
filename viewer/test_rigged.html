@@ -122,9 +122,9 @@
     /* Bottom Dock: 3 Bodybuilding Poses */
     .dock-container {
       position: absolute;
-      bottom: 20px;
-      left: 12px;
-      right: 12px;
+      bottom: 6px;
+      left: 8px;
+      right: 8px;
       display: flex;
       justify-content: center;
       z-index: 30;
@@ -132,26 +132,27 @@
     }
     .pose-bar {
       display: flex;
-      gap: 10px;
-      padding: 8px 10px;
+      gap: 4px;
+      padding: 3px 6px;
       background: rgba(18, 14, 28, 0.94);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(168, 85, 247, 0.3);
-      border-radius: 20px;
-      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75), 0 0 28px rgba(168, 85, 247, 0.2);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 16px rgba(168, 85, 247, 0.2);
       pointer-events: auto;
       max-width: 100%;
     }
 
     .pose-btn {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
-      padding: 10px 18px;
-      min-width: 95px;
-      border-radius: 14px;
+      gap: 4px;
+      padding: 5px 9px;
+      min-width: auto;
+      border-radius: 8px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.08);
       color: #94a3b8;
@@ -169,18 +170,18 @@
       background: linear-gradient(135deg, rgba(168, 85, 247, 0.5) 0%, rgba(239, 68, 68, 0.5) 100%);
       border-color: rgba(244, 114, 182, 0.8);
       color: #ffffff;
-      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45);
-      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 4px 14px rgba(168, 85, 247, 0.45);
+      transform: translateY(-1px);
     }
     .pose-icon {
-      font-size: 22px;
-      margin-bottom: 4px;
+      font-size: 12px;
+      margin-bottom: 0;
       line-height: 1;
     }
     .pose-name {
-      font-size: 11.5px;
-      font-weight: 800;
-      letter-spacing: 0.02em;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
     }
 
     /* Loading Screen */
@@ -229,16 +230,6 @@
       <span>←</span>
       <span>Карта мышц</span>
     </a>
-    <div class="brand-title">HeroGym • Бодибилдинг</div>
-  </div>
-
-  <!-- Muscle Focus Badge -->
-  <div id="muscleBadge">
-    <div class="badge-label">
-      <span>🔥</span>
-      <span id="badgePoseTitle">Двойной бицепс</span>
-    </div>
-    <div class="badge-muscles" id="badgeMuscles">Бицепсы • Верх груди • Передние дельты • Широчайшие</div>
   </div>
 
   <!-- 3D Canvas -->
@@ -251,13 +242,13 @@
         <span class="pose-icon">🏆</span>
         <span class="pose-name">Двойной бицепс</span>
       </button>
-      <button class="pose-btn" data-pose="most_muscular">
-        <span class="pose-icon">🦀</span>
-        <span class="pose-name">Краб</span>
+      <button class="pose-btn" data-pose="arni">
+        <span class="pose-icon">👑</span>
+        <span class="pose-name">Поза Арни</span>
       </button>
-      <button class="pose-btn" data-pose="lat_spread">
-        <span class="pose-icon">🦅</span>
-        <span class="pose-name">Широчайшие</span>
+      <button class="pose-btn" data-pose="icarus">
+        <span class="pose-icon">🕊️</span>
+        <span class="pose-name">Икарус</span>
       </button>
     </div>
   </div>
@@ -336,101 +327,101 @@
     scene.add(ring);
 
     // ==========================================
-    // 3. FIST CURLING HELPER
+    // 3. FIST & HAND SHAPE PRESERVATION
     // ==========================================
-    function makeFists(curlAmount = 0.85) {
-      const res = {};
-      ['Left', 'Right'].forEach(side => {
-        const prefix = `mixamorig${side}Hand`;
-        ['Index', 'Middle', 'Ring', 'Pinky'].forEach(f => {
-          res[`${prefix}${f}1`] = [curlAmount, 0, 0];
-          res[`${prefix}${f}2`] = [curlAmount * 1.15, 0, 0];
-          res[`${prefix}${f}3`] = [curlAmount * 0.9, 0, 0];
-        });
-        const thumbDir = side === 'Left' ? 0.35 : -0.35;
-        res[`${prefix}Thumb1`] = [curlAmount * 0.4, thumbDir, 0];
-        res[`${prefix}Thumb2`] = [curlAmount * 0.65, 0, 0];
-        res[`${prefix}Thumb3`] = [curlAmount * 0.5, 0, 0];
-      });
-      return res;
+    // The Shadow model is already sculpted with muscular fists.
+    // Keeping finger joints at natural zero ensures sculpted fingers and knuckles stay clean and realistic!
+    function makeFists() {
+      return {};
     }
 
     // ==========================================
-    // 4. THE 3 ICONIC BODYBUILDING POSES
+    // 4. THE 3 ICONIC & DISTINCT BODYBUILDING POSES
     // ==========================================
     const POSES = {
-      // 1. ДВОЙНОЙ БИЦЕПС СПЕРЕДИ (Front Double Biceps)
+      // 1. ДВОЙНОЙ БИЦЕПС (Phil Heath / Classic Front Double Biceps)
       double_biceps: {
-        title: 'Двойной бицепс спереди',
+        title: 'Двойной бицепс',
         muscles: 'Пик бицепса • Верх грудных • Дельты • Широчайшие',
         rotations: {
-          ...makeFists(0.9),
-          mixamorigSpine: [-0.06, 0, 0],
-          mixamorigSpine1: [-0.06, 0, 0],
-          mixamorigSpine2: [-0.08, 0, 0],
+          mixamorigHips: [0, 0, 0],
+          mixamorigSpine: [-0.05, 0, 0],
+          mixamorigSpine1: [-0.05, 0, 0],
+          mixamorigSpine2: [-0.06, 0, 0],
+          mixamorigHead: [-0.04, 0, 0],
           mixamorigLeftShoulder: [0.08, 0, 0.08],
           mixamorigRightShoulder: [-0.08, 0, -0.08],
-          mixamorigLeftArm: [1.35, -0.1, 0.1],
-          mixamorigRightArm: [-1.4, 0.4, 0.2],
-          mixamorigLeftForeArm: [1.55, 0.2, -0.4],
-          mixamorigRightForeArm: [0.4, 0.0, -1.2],
-          mixamorigLeftHand: [0.35, 0.1, -0.15],
-          mixamorigRightHand: [-0.35, -0.1, 0.15],
-          mixamorigLeftUpLeg: [0.1, 0, 0.16],
-          mixamorigRightUpLeg: [0.1, 0, -0.16],
-          mixamorigLeftLeg: [-0.15, 0, 0],
-          mixamorigRightLeg: [-0.15, 0, 0]
+          mixamorigLeftArm: [1.28, -0.05, 0.08],
+          mixamorigRightArm: [-1.28, 0.3, 0.12],
+          mixamorigLeftForeArm: [1.38, 0.12, -0.3],
+          mixamorigRightForeArm: [0.32, 0.0, -1.05],
+          mixamorigLeftHand: [0.2, 0.05, -0.1],
+          mixamorigRightHand: [-0.2, -0.05, 0.1],
+          mixamorigLeftUpLeg: [0.08, 0, 0.18],
+          mixamorigRightUpLeg: [0.08, 0, -0.18],
+          mixamorigLeftLeg: [-0.12, 0, 0],
+          mixamorigRightLeg: [-0.12, 0, 0]
         }
       },
 
-      // 2. КРАБ (Most Muscular / Максимальная мускулистость)
-      most_muscular: {
-        title: 'Краб (Максимальная мускулистость)',
-        muscles: 'Грудные мышцы • Трапеции • Пресс • Плечи',
+      // 2. ПОЗА АРНИ (Arnold Schwarzenegger Classic Twisting Bicep Pose)
+      arni: {
+        title: 'Поза Арни',
+        muscles: 'Бицепс в профиль • Зубчатые мышцы • Рельеф спины • Икры',
         rotations: {
-          ...makeFists(0.95),
-          mixamorigSpine: [0.16, 0, 0],
-          mixamorigSpine1: [0.16, 0, 0],
-          mixamorigSpine2: [0.18, 0, 0],
-          mixamorigNeck: [-0.08, 0, 0],
-          mixamorigHead: [0.12, 0, 0],
-          mixamorigLeftShoulder: [0.22, 0.18, 0.12],
-          mixamorigRightShoulder: [-0.22, -0.18, -0.12],
-          mixamorigLeftArm: [0.3, 0.3, -0.4],
-          mixamorigRightArm: [-0.2, 0.0, -0.4],
-          mixamorigLeftForeArm: [1.1, 0.1, -0.5],
-          mixamorigRightForeArm: [0.0, 0.0, -0.8],
-          mixamorigLeftHand: [0.4, 0.1, -0.2],
-          mixamorigRightHand: [-0.4, -0.1, 0.2],
-          mixamorigLeftUpLeg: [0.15, 0, 0.22],
-          mixamorigRightUpLeg: [0.15, 0, -0.22],
-          mixamorigLeftLeg: [-0.25, 0, 0],
-          mixamorigRightLeg: [-0.25, 0, 0]
+          mixamorigHips: [0, -0.65, 0],
+          mixamorigSpine: [0.12, 0.45, -0.08],
+          mixamorigSpine1: [0.10, 0.35, -0.06],
+          mixamorigSpine2: [0.08, 0.25, -0.05],
+          mixamorigNeck: [0, 0.35, 0],
+          mixamorigHead: [0.05, 0.3, 0],
+          // Near Arm (Right): flexed across chest at 90 degrees
+          mixamorigRightShoulder: [-0.12, -0.15, -0.08],
+          mixamorigRightArm: [-0.35, 0.35, 0.18],
+          mixamorigRightForeArm: [0.2, 0.0, -1.25],
+          mixamorigRightHand: [-0.25, 0, 0.2],
+          // Back Arm (Left): arched high over head
+          mixamorigLeftShoulder: [0.18, 0.08, 0.12],
+          mixamorigLeftArm: [2.05, 0.08, 0.18],
+          mixamorigLeftForeArm: [1.5, 0.1, -0.35],
+          mixamorigLeftHand: [0.3, 0, -0.15],
+          // Staggered Legs (Front leg bent, back leg extended back on toes)
+          mixamorigLeftUpLeg: [0.22, 0.08, 0.14],
+          mixamorigLeftLeg: [-0.28, 0, 0],
+          mixamorigRightUpLeg: [-0.18, 0, -0.1],
+          mixamorigRightLeg: [-0.12, 0, 0],
+          mixamorigRightFoot: [0.32, 0, 0]
         }
       },
 
-      // 3. ШИРОЧАЙШИЕ СПЕРЕДИ (Front Lat Spread)
-      lat_spread: {
-        title: 'Широчайшие спереди',
-        muscles: 'Широчайшие мышцы (Lats) • Косые мышцы • Квадрицепсы',
+      // 3. ИКАРУС (Zyzz / Alex Eubank Aesthetic Icarus Pose)
+      icarus: {
+        title: 'Икарус',
+        muscles: 'Широчайшие крылья • Грудной пик • Пресс • Эстетика',
         rotations: {
-          ...makeFists(0.6),
-          mixamorigSpine: [-0.08, 0, 0],
-          mixamorigSpine1: [-0.08, 0, 0],
-          mixamorigSpine2: [-0.10, 0, 0],
-          mixamorigHead: [-0.05, 0, 0],
-          mixamorigLeftShoulder: [0.06, 0.25, 0.18],
-          mixamorigRightShoulder: [-0.06, -0.25, -0.18],
-          mixamorigLeftArm: [0.5, 0.1, -0.4],
-          mixamorigRightArm: [-0.6, -0.4, -0.4],
-          mixamorigLeftForeArm: [1.4, 0.1, -0.6],
-          mixamorigRightForeArm: [-1.6, 0.0, -1.2],
-          mixamorigLeftHand: [0.2, 0, 0.1],
-          mixamorigRightHand: [-0.2, 0, -0.1],
-          mixamorigLeftUpLeg: [0.12, 0, 0.25],
-          mixamorigRightUpLeg: [0.12, 0, -0.25],
-          mixamorigLeftLeg: [-0.18, 0, 0],
-          mixamorigRightLeg: [-0.18, 0, 0]
+          mixamorigHips: [0, 0, 0],
+          mixamorigSpine: [-0.18, 0, 0],
+          mixamorigSpine1: [-0.18, 0, 0],
+          mixamorigSpine2: [-0.22, 0, 0],
+          mixamorigNeck: [-0.15, 0.15, 0],
+          mixamorigHead: [-0.18, 0.18, 0.05],
+          // Left Arm: extended wide out and back like a soaring wing
+          mixamorigLeftShoulder: [-0.05, 0.18, 0.08],
+          mixamorigLeftArm: [0.65, 0.22, -0.5],
+          mixamorigLeftForeArm: [0.65, 0.1, -0.2],
+          mixamorigLeftHand: [0.2, 0.1, 0.1],
+          // Right Arm: high victory flex
+          mixamorigRightShoulder: [0.15, -0.15, -0.1],
+          mixamorigRightArm: [-1.6, -0.25, 0.35],
+          mixamorigRightForeArm: [0.2, 0.0, -0.85],
+          mixamorigRightHand: [-0.25, 0, 0.2],
+          // Dynamic athletic stance
+          mixamorigLeftUpLeg: [0.14, 0.08, 0.25],
+          mixamorigLeftLeg: [-0.22, 0, 0],
+          mixamorigRightUpLeg: [0.14, -0.08, -0.25],
+          mixamorigRightLeg: [-0.22, 0, 0],
+          mixamorigLeftFoot: [0.08, 0, 0],
+          mixamorigRightFoot: [0.08, 0, 0]
         }
       }
     };
@@ -467,7 +458,8 @@
             color: 0x38344c,
             roughness: 0.38,
             metalness: 0.4,
-            skinning: true
+            skinning: true,
+            side: THREE.DoubleSide
           });
           child.castShadow = true;
           child.receiveShadow = true;
@@ -508,10 +500,6 @@
       if (!bones || Object.keys(bones).length === 0) return;
       const poseDef = POSES[poseKey];
       if (!poseDef) return;
-
-      // Update badge
-      document.getElementById('badgePoseTitle').textContent = poseDef.title;
-      document.getElementById('badgeMuscles').textContent = poseDef.muscles;
 
       // Setup quaternions
       for (const name in bones) {

@@ -35,46 +35,6 @@
       touch-action: none;
     }
 
-    /* Top App Header & Hint */
-    .top-bar {
-      position: absolute;
-      top: 10px;
-      left: 12px;
-      right: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      pointer-events: none;
-      z-index: 25;
-    }
-    .hero-title {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      color: #d8b4fe;
-      text-transform: uppercase;
-      background: rgba(15, 13, 22, 0.65);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      padding: 4px 10px;
-      border-radius: 8px;
-      border: 1px solid rgba(168, 85, 247, 0.25);
-    }
-    .hint-badge {
-      font-size: 9.5px;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.85);
-      background: rgba(15, 13, 22, 0.65);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      padding: 4px 9px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
     /* Floating Hotspot Muscle Info Card */
     #muscleCard {
       position: absolute;
@@ -180,66 +140,15 @@
       transition: width 0.35s ease;
     }
 
-    /* Quick Muscle Filter Chips (Above Legend) */
-    .chips-strip {
-      position: absolute;
-      bottom: 42px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 5px;
-      max-width: 96%;
-      overflow-x: auto;
-      white-space: nowrap;
-      padding: 2px 4px;
-      z-index: 25;
-      scrollbar-width: none;
-    }
-    .chips-strip::-webkit-scrollbar {
-      display: none;
-    }
-    .muscle-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 10.5px;
-      font-weight: 700;
-      color: #e2e8f0;
-      background: rgba(26, 23, 36, 0.85);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      padding: 5px 10px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      cursor: pointer;
-      pointer-events: auto;
-      transition: transform 0.12s, border-color 0.15s, background 0.15s;
-    }
-    .muscle-chip:active {
-      transform: scale(0.95);
-    }
-    .muscle-chip.selected {
-      background: rgba(168, 85, 247, 0.25);
-      border-color: #a855f7;
-      color: #ffffff;
-      box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
-    }
-    .chip-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
     /* Bottom Recovery Status Legend */
     .legend-bar {
       position: absolute;
-      bottom: 8px;
+      bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
       gap: 8px;
-      padding: 4px 10px;
+      padding: 5px 12px;
       background: rgba(15, 13, 22, 0.75);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
@@ -308,16 +217,6 @@
 </head>
 <body>
 
-  <!-- Top App Header -->
-  <div class="top-bar">
-    <div class="hero-title">ТЕНЬ • СТАТУС МЫШЦ</div>
-    <div style="display: flex; gap: 6px; pointer-events: auto;">
-      <a href="./test_rigged.html" class="hint-badge" style="text-decoration: none; cursor: pointer; background: rgba(168, 85, 247, 0.28); border-color: rgba(168, 85, 247, 0.5); color: #f3e8ff;" title="Смотреть 3D позы бодибилдинга">
-        💪 Позы 3D
-      </a>
-    </div>
-  </div>
-
   <!-- 3D Canvas -->
   <canvas id="c3d"></canvas>
 
@@ -339,9 +238,6 @@
       <div class="card-progress-fill" id="cardFill"></div>
     </div>
   </div>
-
-  <!-- Quick Muscle Filter Chips -->
-  <div class="chips-strip" id="chipsStrip"></div>
 
   <!-- Bottom Legend Bar -->
   <div class="legend-bar">
@@ -383,19 +279,19 @@
     const cardRecovery = document.getElementById('cardRecovery');
     const cardFill = document.getElementById('cardFill');
     const cardClose = document.getElementById('cardClose');
-    const chipsStrip = document.getElementById('chipsStrip');
 
     let activeHotspotId = null;
     let targetAzimuth = null;
     let isAutoRotating = false;
 
     // ==========================================
-    // RECOVERY HOTSPOTS DATA DEFINITION
+    // RECOVERY HOTSPOTS DATA DEFINITION (11 ANATOMICAL REGIONS)
     // ==========================================
     const HOTSPOTS_DATA = [
+      // 1. ГРУДЬ - правая грудная мышца
       {
         id: 'chest',
-        name: 'Грудные мышцы (Pectoralis)',
+        name: 'Грудные мышцы',
         shortName: 'Грудь',
         statusBadge: '🔴 Нагрузка (85%)',
         badgeColor: '#ef4444',
@@ -407,30 +303,14 @@
         recoveryInfo: '🔋 Полное восстановление: завтра к 14:00',
         recoveryPercent: 65,
         fillGradient: 'linear-gradient(90deg, #ef4444, #f59e0b)',
-        // 3D position relative to 2.0m tall character (Feet at Y=0)
-        pos: new THREE.Vector3(0, 1.34, 0.23),
-        targetAngle: 0 // Front view
+        pos: new THREE.Vector3(-0.16, 1.34, 0.24),
+        normal: new THREE.Vector3(0, 0, 1),
+        targetAngle: 0
       },
-      {
-        id: 'arms',
-        name: 'Руки и дельты (Бицепс / Плечи)',
-        shortName: 'Руки',
-        statusBadge: '🟡 Восстановление (45%)',
-        badgeColor: '#f59e0b',
-        badgeBg: 'rgba(245, 158, 11, 0.18)',
-        badgeBorder: 'rgba(245, 158, 11, 0.4)',
-        dotClass: 'dot-yellow',
-        colorHex: '#f59e0b',
-        workoutInfo: '⏱ 52ч после тренировки (Подъемы гантелей 16кг)',
-        recoveryInfo: '🔋 Фаза компенсации мышечных волокон',
-        recoveryPercent: 80,
-        fillGradient: 'linear-gradient(90deg, #f59e0b, #10b981)',
-        pos: new THREE.Vector3(-0.46, 1.32, 0.08),
-        targetAngle: 0.35
-      },
+      // 2. ПРЕСС - центр пресса
       {
         id: 'abs',
-        name: 'Пресс (Rectus Abdominis)',
+        name: 'Мышцы пресса',
         shortName: 'Пресс',
         statusBadge: '🟢 Отдохнули (100%)',
         badgeColor: '#10b981',
@@ -442,42 +322,199 @@
         recoveryInfo: '⚡ 100% готовность к максимальным нагрузкам',
         recoveryPercent: 100,
         fillGradient: 'linear-gradient(90deg, #10b981, #34d399)',
-        pos: new THREE.Vector3(0, 1.05, 0.23),
+        pos: new THREE.Vector3(0, 1.04, 0.23),
+        normal: new THREE.Vector3(0, 0, 1),
         targetAngle: 0
       },
+      // 3. ПЛЕЧИ - дельтовидная мышца
       {
-        id: 'quads',
-        name: 'Квадрицепсы (Quadriceps)',
-        shortName: 'Ноги',
+        id: 'shoulders',
+        name: 'Плечи',
+        shortName: 'Плечи',
         statusBadge: '🟡 Восстановление (50%)',
         badgeColor: '#f59e0b',
         badgeBg: 'rgba(245, 158, 11, 0.18)',
         badgeBorder: 'rgba(245, 158, 11, 0.4)',
         dotClass: 'dot-yellow',
         colorHex: '#f59e0b',
-        workoutInfo: '⏱ 46ч после тренировки (Присед со штангой 100кг)',
-        recoveryInfo: '🔋 Синтез гликогена, готовность через 24ч',
+        workoutInfo: '⏱ 42ч после тренировки (Армейский жим • Махи гантелями)',
+        recoveryInfo: '🔋 Фаза компенсации волокон дельтовидных мышц',
         recoveryPercent: 75,
         fillGradient: 'linear-gradient(90deg, #f59e0b, #10b981)',
-        pos: new THREE.Vector3(0.20, 0.65, 0.17),
-        targetAngle: -0.25
+        pos: new THREE.Vector3(-0.46, 1.42, 0.08),
+        normal: new THREE.Vector3(-0.7, 0.2, 0.7).normalize(),
+        targetAngle: 0.35
       },
+      // 4. БИЦЕПС - передняя поверхность левой руки (разведен с трицепсом по разным рукам)
       {
-        id: 'back',
-        name: 'Широчайшие и Трапеции (Back)',
-        shortName: 'Спина',
+        id: 'biceps',
+        name: 'Бицепс',
+        shortName: 'Бицепс',
+        statusBadge: '🟡 Восстановление (50%)',
+        badgeColor: '#f59e0b',
+        badgeBg: 'rgba(245, 158, 11, 0.18)',
+        badgeBorder: 'rgba(245, 158, 11, 0.4)',
+        dotClass: 'dot-yellow',
+        colorHex: '#f59e0b',
+        workoutInfo: '⏱ 48ч после тренировки (Подъемы штанги на бицепс 35кг)',
+        recoveryInfo: '🔋 Фаза компенсации мышечных волокон',
+        recoveryPercent: 75,
+        fillGradient: 'linear-gradient(90deg, #f59e0b, #10b981)',
+        pos: new THREE.Vector3(0.46, 1.22, 0.13),
+        normal: new THREE.Vector3(0.6, 0, 0.8).normalize(),
+        targetAngle: -0.35
+      },
+      // 5. ТРИЦЕПС - задняя поверхность правой руки
+      {
+        id: 'triceps',
+        name: 'Трицепс',
+        shortName: 'Трицепс',
+        statusBadge: '🔴 Нагрузка (75%)',
+        badgeColor: '#ef4444',
+        badgeBg: 'rgba(239, 68, 68, 0.18)',
+        badgeBorder: 'rgba(239, 68, 68, 0.4)',
+        dotClass: 'dot-red',
+        colorHex: '#ef4444',
+        workoutInfo: '⏱ 22ч после тренировки (Французский жим / Брусья)',
+        recoveryInfo: '🔋 Восстановление гликогена: через 26ч',
+        recoveryPercent: 55,
+        fillGradient: 'linear-gradient(90deg, #ef4444, #f59e0b)',
+        pos: new THREE.Vector3(-0.45, 1.14, -0.12),
+        normal: new THREE.Vector3(-0.6, 0, -0.8).normalize(),
+        targetAngle: Math.PI - 0.4
+      },
+      // 6. ТРАПЕЦИИ - верх спины / зона между лопатками (опущена ниже)
+      {
+        id: 'traps',
+        name: 'Трапеции',
+        shortName: 'Трапеции',
         statusBadge: '🟢 Отдохнули (100%)',
         badgeColor: '#10b981',
         badgeBg: 'rgba(16, 185, 129, 0.18)',
         badgeBorder: 'rgba(16, 185, 129, 0.4)',
         dotClass: 'dot-green',
         colorHex: '#10b981',
-        workoutInfo: '⏱ 120ч без нагрузки (Тяга штанги в наклоне)',
-        recoveryInfo: '⚡ Мышцы спины полностью восстановлены',
+        workoutInfo: '⏱ 98ч без нагрузки (Шраги с гантелями 32кг)',
+        recoveryInfo: '⚡ Трапециевидные мышцы в полной боеготовности',
         recoveryPercent: 100,
         fillGradient: 'linear-gradient(90deg, #10b981, #34d399)',
-        pos: new THREE.Vector3(0, 1.30, -0.22),
-        targetAngle: Math.PI // 180° Back view!
+        pos: new THREE.Vector3(-0.06, 1.36, -0.18),
+        normal: new THREE.Vector3(0, 0, -1),
+        targetAngle: Math.PI
+      },
+      // 7. ШИРОЧАЙШИЕ - спина / крылья
+      {
+        id: 'lats',
+        name: 'Широчайшие мышцы',
+        shortName: 'Широчайшие',
+        statusBadge: '🟡 Восстановление (40%)',
+        badgeColor: '#f59e0b',
+        badgeBg: 'rgba(245, 158, 11, 0.18)',
+        badgeBorder: 'rgba(245, 158, 11, 0.4)',
+        dotClass: 'dot-yellow',
+        colorHex: '#f59e0b',
+        workoutInfo: '⏱ 50ч после тренировки (Подтягивания с весом +16кг)',
+        recoveryInfo: '🔋 Восстановление микроструктуры волокон',
+        recoveryPercent: 80,
+        fillGradient: 'linear-gradient(90deg, #f59e0b, #10b981)',
+        pos: new THREE.Vector3(0.20, 1.08, -0.20),
+        normal: new THREE.Vector3(0.5, 0, -0.86).normalize(),
+        targetAngle: Math.PI
+      },
+      // 8. РАЗГИБАТЕЛИ СПИНЫ - поясница над ягодицами
+      {
+        id: 'lower_back',
+        name: 'Разгибатели спины (Поясница)',
+        shortName: 'Поясница',
+        statusBadge: '🔴 Нагрузка (80%)',
+        badgeColor: '#ef4444',
+        badgeBg: 'rgba(239, 68, 68, 0.18)',
+        badgeBorder: 'rgba(239, 68, 68, 0.4)',
+        dotClass: 'dot-red',
+        colorHex: '#ef4444',
+        workoutInfo: '⏱ 20ч после тренировки (Становая тяга 120кг • Гиперэкстензия)',
+        recoveryInfo: '🔋 Глубокое восстановление поясничного отдела',
+        recoveryPercent: 60,
+        fillGradient: 'linear-gradient(90deg, #ef4444, #f59e0b)',
+        pos: new THREE.Vector3(0.06, 0.96, -0.17),
+        normal: new THREE.Vector3(0, 0, -1),
+        targetAngle: Math.PI
+      },
+      // 9. ЯГОДИЧНЫЕ - ягодицы сзади
+      {
+        id: 'glutes',
+        name: 'Ягодичные мышцы',
+        shortName: 'Ягодицы',
+        statusBadge: '🟡 Восстановление (55%)',
+        badgeColor: '#f59e0b',
+        badgeBg: 'rgba(245, 158, 11, 0.18)',
+        badgeBorder: 'rgba(245, 158, 11, 0.4)',
+        dotClass: 'dot-yellow',
+        colorHex: '#f59e0b',
+        workoutInfo: '⏱ 40ч после тренировки (Выпады со штангой • Ягодичный мост)',
+        recoveryInfo: '🔋 Регенерация волокон большой ягодичной мышцы',
+        recoveryPercent: 70,
+        fillGradient: 'linear-gradient(90deg, #f59e0b, #10b981)',
+        pos: new THREE.Vector3(-0.14, 0.84, -0.20),
+        normal: new THREE.Vector3(0, 0, -1),
+        targetAngle: Math.PI
+      },
+      // 9. КВАДРИЦЕПС - передняя часть бедра
+      {
+        id: 'quads',
+        name: 'Квадрицепсы',
+        shortName: 'Квадрицепс',
+        statusBadge: '🔴 Нагрузка (90%)',
+        badgeColor: '#ef4444',
+        badgeBg: 'rgba(239, 68, 68, 0.18)',
+        badgeBorder: 'rgba(239, 68, 68, 0.4)',
+        dotClass: 'dot-red',
+        colorHex: '#ef4444',
+        workoutInfo: '⏱ 14ч после тренировки (Присед со штангой 110кг • 5x5)',
+        recoveryInfo: '🔋 Глубокая фаза восстановления: 48ч',
+        recoveryPercent: 45,
+        fillGradient: 'linear-gradient(90deg, #ef4444, #f59e0b)',
+        pos: new THREE.Vector3(-0.20, 0.65, 0.18),
+        normal: new THREE.Vector3(0, 0, 1),
+        targetAngle: 0
+      },
+      // 10. БИЦЕПС БЕДРА - задняя поверхность левого бедра
+      {
+        id: 'hamstrings',
+        name: 'Бицепс бедра',
+        shortName: 'Бицепс бедра',
+        statusBadge: '🟡 Восстановление (50%)',
+        badgeColor: '#f59e0b',
+        badgeBg: 'rgba(245, 158, 11, 0.18)',
+        badgeBorder: 'rgba(245, 158, 11, 0.4)',
+        dotClass: 'dot-yellow',
+        colorHex: '#f59e0b',
+        workoutInfo: '⏱ 60ч после тренировки (Румынская тяга 90кг • 4x10)',
+        recoveryInfo: '🔋 Синтез белка и компенсация',
+        recoveryPercent: 75,
+        fillGradient: 'linear-gradient(90deg, #f59e0b, #10b981)',
+        pos: new THREE.Vector3(0.18, 0.67, -0.17),
+        normal: new THREE.Vector3(0, 0, -1),
+        targetAngle: Math.PI
+      },
+      // 11. ИКРЫ - задняя часть голени
+      {
+        id: 'calves',
+        name: 'Икроножные мышцы',
+        shortName: 'Икры',
+        statusBadge: '🟢 Отдохнули (100%)',
+        badgeColor: '#10b981',
+        badgeBg: 'rgba(16, 185, 129, 0.18)',
+        badgeBorder: 'rgba(16, 185, 129, 0.4)',
+        dotClass: 'dot-green',
+        colorHex: '#10b981',
+        workoutInfo: '⏱ 120ч без нагрузки (Подъемы на носки 80кг)',
+        recoveryInfo: '⚡ Мышцы голени полностью восстановились',
+        recoveryPercent: 100,
+        fillGradient: 'linear-gradient(90deg, #10b981, #34d399)',
+        pos: new THREE.Vector3(0.18, 0.32, -0.15),
+        normal: new THREE.Vector3(0, 0, -1),
+        targetAngle: Math.PI
       }
     ];
 
@@ -499,49 +536,75 @@
       return new THREE.CanvasTexture(c);
     }
 
-    function createHotspotCanvasTexture(colorHex) {
+    // Creates static target pin (isActive=false) or shimmering radiant aura (isActive=true)
+    function createHotspotCanvasTexture(colorHex, isActive = false) {
       const c = document.createElement('canvas');
       c.width = 128;
       c.height = 128;
       const ctx = c.getContext('2d');
 
-      // Outer pulse ring
-      ctx.beginPath();
-      ctx.arc(64, 64, 52, 0, Math.PI * 2);
-      ctx.strokeStyle = colorHex;
-      ctx.lineWidth = 5;
-      ctx.globalAlpha = 0.5;
-      ctx.stroke();
+      if (isActive) {
+        // --- ACTIVE STATE: RADIANT SHIMMERING AURA ---
+        const grad = ctx.createRadialGradient(64, 64, 12, 64, 64, 62);
+        grad.addColorStop(0, colorHex);
+        grad.addColorStop(0.5, colorHex);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.globalAlpha = 0.45;
+        ctx.fill();
 
-      // Soft glow aura
-      const grad = ctx.createRadialGradient(64, 64, 10, 64, 64, 48);
-      grad.addColorStop(0, colorHex);
-      grad.addColorStop(0.65, colorHex);
-      grad.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad;
-      ctx.globalAlpha = 0.35;
-      ctx.fill();
+        ctx.beginPath();
+        ctx.arc(64, 64, 52, 0, Math.PI * 2);
+        ctx.strokeStyle = colorHex;
+        ctx.lineWidth = 4;
+        ctx.globalAlpha = 0.85;
+        ctx.stroke();
 
-      // Mid bright ring
-      ctx.beginPath();
-      ctx.arc(64, 64, 28, 0, Math.PI * 2);
-      ctx.strokeStyle = colorHex;
-      ctx.lineWidth = 5;
-      ctx.globalAlpha = 0.95;
-      ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(64, 64, 30, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3.5;
+        ctx.globalAlpha = 0.95;
+        ctx.stroke();
 
-      // Core solid dot
-      ctx.beginPath();
-      ctx.arc(64, 64, 16, 0, Math.PI * 2);
-      ctx.fillStyle = colorHex;
-      ctx.globalAlpha = 1.0;
-      ctx.fill();
+        ctx.beginPath();
+        ctx.arc(64, 64, 18, 0, Math.PI * 2);
+        ctx.fillStyle = colorHex;
+        ctx.globalAlpha = 1.0;
+        ctx.fill();
 
-      // Center white pip
-      ctx.beginPath();
-      ctx.arc(64, 64, 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
+        ctx.beginPath();
+        ctx.arc(64, 64, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      } else {
+        // --- STATIC CALM STATE: NEAT CLEAN TARGET PIN ---
+        ctx.beginPath();
+        ctx.arc(64, 64, 44, 0, Math.PI * 2);
+        ctx.strokeStyle = colorHex;
+        ctx.lineWidth = 3.5;
+        ctx.globalAlpha = 0.65;
+        ctx.stroke();
+
+        const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 38);
+        grad.addColorStop(0, colorHex);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.globalAlpha = 0.25;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(64, 64, 16, 0, Math.PI * 2);
+        ctx.fillStyle = colorHex;
+        ctx.globalAlpha = 0.95;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(64, 64, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 1.0;
+        ctx.fill();
+      }
 
       return new THREE.CanvasTexture(c);
     }
@@ -679,14 +742,11 @@
 
       window.addEventListener('resize', onWindowResize);
 
-      buildQuickChipsUI();
       buildHotspots();
       setupRaycasting();
 
       cardClose.addEventListener('click', () => {
-        card.classList.remove('active');
-        activeHotspotId = null;
-        document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('selected'));
+        deselectHotspot();
       });
 
       loadModel();
@@ -700,9 +760,11 @@
       scene.add(hotspotsGroup);
 
       HOTSPOTS_DATA.forEach(data => {
-        const tex = createHotspotCanvasTexture(data.colorHex);
+        data.normalTex = createHotspotCanvasTexture(data.colorHex, false);
+        data.activeTex = createHotspotCanvasTexture(data.colorHex, true);
+
         const mat = new THREE.SpriteMaterial({
-          map: tex,
+          map: data.normalTex,
           transparent: true,
           depthWrite: false,
           depthTest: false
@@ -710,7 +772,7 @@
 
         const sprite = new THREE.Sprite(mat);
         sprite.position.copy(data.pos);
-        sprite.scale.set(0.18, 0.18, 1);
+        sprite.scale.set(0.13, 0.13, 1);
         sprite.userData = data;
 
         hotspotsGroup.add(sprite);
@@ -718,31 +780,29 @@
       });
     }
 
-    function buildQuickChipsUI() {
-      chipsStrip.innerHTML = '';
-      HOTSPOTS_DATA.forEach(data => {
-        const chip = document.createElement('div');
-        chip.className = 'muscle-chip' + (data.id === activeHotspotId ? ' selected' : '');
-        chip.id = 'chip-' + data.id;
-        chip.innerHTML = `<span class="chip-dot ${data.dotClass}"></span>${data.shortName}`;
-
-        chip.addEventListener('click', () => {
-          if (activeHotspotId === data.id && card.classList.contains('active')) {
-            card.classList.remove('active');
-            activeHotspotId = null;
-            chip.classList.remove('selected');
-          } else {
-            selectHotspot(data);
-          }
-        });
-
-        chipsStrip.appendChild(chip);
+    function deselectHotspot() {
+      card.classList.remove('active');
+      activeHotspotId = null;
+      interactiveSprites.forEach(s => {
+        if (!s.userData) return;
+        s.material.map = s.userData.normalTex;
+        s.material.needsUpdate = true;
+        s.scale.set(0.13, 0.13, 1);
+        s.material.opacity = 0.90;
       });
     }
 
     function selectHotspot(data) {
       if (!data) return;
       activeHotspotId = data.id;
+
+      // Update Sprite textures: active one gets shimmering aura texture, others stay calm
+      interactiveSprites.forEach(s => {
+        if (!s.userData) return;
+        const isSel = s.userData.id === data.id;
+        s.material.map = isSel ? s.userData.activeTex : s.userData.normalTex;
+        s.material.needsUpdate = true;
+      });
 
       // Update Card Content
       cardDot.style.background = data.colorHex;
@@ -763,11 +823,6 @@
       card.style.borderColor = data.colorHex;
       card.style.boxShadow = `0 12px 32px rgba(0, 0, 0, 0.55), 0 0 20px ${data.colorHex}33`;
       card.classList.add('active');
-
-      // Update Chips Selection
-      document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('selected'));
-      const activeChip = document.getElementById('chip-' + data.id);
-      if (activeChip) activeChip.classList.add('selected');
 
       // Smooth auto-rotation to face the selected muscle
       if (data.targetAngle !== undefined) {
@@ -796,15 +851,15 @@
         mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
         raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObjects(interactiveSprites, false);
+        // Only click visible facing sprites (cannot click through the back)
+        const visibleSprites = interactiveSprites.filter(s => s.visible);
+        const intersects = raycaster.intersectObjects(visibleSprites, false);
 
         if (intersects.length > 0) {
           const hit = intersects[0].object;
           if (hit.userData) {
             if (activeHotspotId === hit.userData.id && card.classList.contains('active')) {
-              card.classList.remove('active');
-              activeHotspotId = null;
-              document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('selected'));
+              deselectHotspot();
             } else {
               selectHotspot(hit.userData);
             }
@@ -884,7 +939,8 @@
             emissive: new THREE.Color(0xffffff),
             emissiveIntensity: 1.8,
             roughness: 0.68,
-            metalness: 0.04
+            metalness: 0.04,
+            side: THREE.DoubleSide
           });
         }
       });
@@ -936,13 +992,32 @@
     function animate(time) {
       requestAnimationFrame(animate);
 
-      // Hotspot pulsating animation
       const t = (time || 0) * 0.003;
+      const camDir = camera.position.clone().sub(controls.target).normalize();
+
       interactiveSprites.forEach(sprite => {
-        const isSelected = sprite.userData && sprite.userData.id === activeHotspotId;
-        const base = isSelected ? 0.22 : 0.17;
-        const s = base + Math.sin(t * (isSelected ? 4 : 2.5)) * (isSelected ? 0.03 : 0.015);
-        sprite.scale.set(s, s, 1);
+        const data = sprite.userData;
+        if (!data) return;
+
+        // Front vs back visibility based on surface normal
+        const facing = camDir.dot(data.normal);
+        const isFacing = facing > -0.08;
+        sprite.visible = isFacing;
+
+        if (isFacing) {
+          const isSelected = data.id === activeHotspotId;
+          if (isSelected) {
+            // MERCAET / PULSES ONLY WHEN CLICKED:
+            const pulse = Math.sin(t * 6);
+            const s = 0.21 + pulse * 0.035;
+            sprite.scale.set(s, s, 1);
+            sprite.material.opacity = 0.82 + pulse * 0.18;
+          } else {
+            // CALM / STATIC: constant clean size, steady opacity
+            sprite.scale.set(0.13, 0.13, 1);
+            sprite.material.opacity = 0.90;
+          }
+        }
       });
 
       // Smooth camera auto-glide to target angle when muscle selected
