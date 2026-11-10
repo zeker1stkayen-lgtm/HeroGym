@@ -2,107 +2,556 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Тест: Модель Shadow после Rigging (Tripo)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>HeroGym — 3D Позы Бодибилдинга</title>
   <script src="./js/three.min.js"></script>
   <script src="./js/OrbitControls.js"></script>
   <script src="./js/GLTFLoader.js"></script>
   <style>
-    body {
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
       margin: 0;
+      padding: 0;
       overflow: hidden;
-      background: radial-gradient(circle at 50% 50%, #475569 0%, #1e293b 100%);
-      font-family: sans-serif;
+      background: radial-gradient(circle at 50% 40%, #1f1a2e 0%, #110e1a 60%, #09070f 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #f1f5f9;
+    }
+    canvas#c3d {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      touch-action: none;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 30;
+      pointer-events: none;
+    }
+    .back-btn {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #e2e8f0;
+      background: rgba(26, 21, 38, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 7px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      pointer-events: auto;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s ease;
+    }
+    .back-btn:hover, .back-btn:active {
+      background: rgba(168, 85, 247, 0.3);
+      border-color: rgba(168, 85, 247, 0.6);
       color: #fff;
+      transform: translateY(-1px);
     }
-    #info {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.6);
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-size: 12px;
-      line-height: 1.5;
+    .brand-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #d8b4fe;
+      text-transform: uppercase;
+      background: rgba(26, 21, 38, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(168, 85, 247, 0.25);
     }
-    #loading {
+
+    /* Muscle Accent Badge (top center) */
+    #muscleBadge {
       position: absolute;
-      inset: 0;
+      top: 62px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 18px;
+      background: rgba(20, 16, 30, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 14px;
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 0 16px rgba(239, 68, 68, 0.25);
+      z-index: 25;
+      text-align: center;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 92%;
+    }
+    .badge-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #f87171;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
-      font-weight: bold;
-      background: #1e293b;
+      gap: 6px;
+    }
+    .badge-muscles {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-top: 3px;
+    }
+
+    /* Bottom Dock: 3 Bodybuilding Poses */
+    .dock-container {
+      position: absolute;
+      bottom: 20px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: center;
+      z-index: 30;
+      pointer-events: none;
+    }
+    .pose-bar {
+      display: flex;
+      gap: 10px;
+      padding: 8px 10px;
+      background: rgba(18, 14, 28, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 20px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75), 0 0 28px rgba(168, 85, 247, 0.2);
+      pointer-events: auto;
+      max-width: 100%;
+    }
+
+    .pose-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      min-width: 95px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+      outline: none;
+    }
+    .pose-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f1f5f9;
+      transform: translateY(-1px);
+    }
+    .pose-btn.active {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.5) 0%, rgba(239, 68, 68, 0.5) 100%);
+      border-color: rgba(244, 114, 182, 0.8);
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45);
+      transform: translateY(-3px) scale(1.02);
+    }
+    .pose-icon {
+      font-size: 22px;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    .pose-name {
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    /* Loading Screen */
+    #loadingOverlay {
+      position: absolute;
+      inset: 0;
+      background: #110e1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      transition: opacity 0.35s ease;
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid rgba(168, 85, 247, 0.2);
+      border-top-color: #a855f7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loading-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-top: 14px;
+      letter-spacing: 0.03em;
     }
   </style>
 </head>
 <body>
-  <div id="info">
-    <b>🦴 Модель после риггинга (shadow_rigged.glb)</b><br>
-    Костей: 54 (Mixamo скелет)<br>
-    Сетка: 83 сегмента Tripo
+
+  <!-- Loading Screen -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-title">Загрузка атлета...</div>
   </div>
-  <div id="loading">Загрузка rigged модели...</div>
+
+  <!-- Top App Bar -->
+  <div class="top-bar">
+    <a href="./index.html" class="back-btn" title="Вернуться к интерактивной карте мышц">
+      <span>←</span>
+      <span>Карта мышц</span>
+    </a>
+    <div class="brand-title">HeroGym • Бодибилдинг</div>
+  </div>
+
+  <!-- Muscle Focus Badge -->
+  <div id="muscleBadge">
+    <div class="badge-label">
+      <span>🔥</span>
+      <span id="badgePoseTitle">Двойной бицепс</span>
+    </div>
+    <div class="badge-muscles" id="badgeMuscles">Бицепсы • Верх груди • Передние дельты • Широчайшие</div>
+  </div>
+
+  <!-- 3D Canvas -->
+  <canvas id="c3d"></canvas>
+
+  <!-- Bottom Pose Selector: 3 Core Poses -->
+  <div class="dock-container">
+    <div class="pose-bar">
+      <button class="pose-btn active" data-pose="double_biceps">
+        <span class="pose-icon">🏆</span>
+        <span class="pose-name">Двойной бицепс</span>
+      </button>
+      <button class="pose-btn" data-pose="most_muscular">
+        <span class="pose-icon">🦀</span>
+        <span class="pose-name">Краб</span>
+      </button>
+      <button class="pose-btn" data-pose="lat_spread">
+        <span class="pose-icon">🦅</span>
+        <span class="pose-name">Широчайшие</span>
+      </button>
+    </div>
+  </div>
 
   <script>
+    // ==========================================
+    // 1. SCENE SETUP & THREE.JS ENGINE
+    // ==========================================
+    const canvas = document.getElementById('c3d');
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 1.0, 3.5);
+    scene.fog = new THREE.FogExp2(0x110e1a, 0.15);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1.05, 3.2);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    document.body.appendChild(renderer.domElement);
+    renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.target.set(0, 0.9, 0);
+    controls.dampingFactor = 0.06;
+    controls.target.set(0, 0.88, 0);
+    controls.minDistance = 1.4;
+    controls.maxDistance = 5.5;
+    controls.maxPolarAngle = Math.PI / 2 + 0.05;
 
-    // Lights
-    const amb = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(amb);
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
-    dir.position.set(2, 4, 3);
-    scene.add(dir);
-    const dirBack = new THREE.DirectionalLight(0xa5b4fc, 0.8);
-    dirBack.position.set(-2, 3, -3);
-    scene.add(dirBack);
+    // ==========================================
+    // 2. CONTEST STAGE LIGHTING (Mr. Olympia Style)
+    // ==========================================
+    const ambLight = new THREE.AmbientLight(0x28203d, 1.2);
+    scene.add(ambLight);
 
-    // Grid
-    const grid = new THREE.GridHelper(4, 20, 0x94a3b8, 0x334155);
-    scene.add(grid);
+    // Warm overhead key spotlight (sharp muscular definition)
+    const keySpot = new THREE.SpotLight(0xfff3e0, 2.8, 12, Math.PI / 4, 0.4, 1.0);
+    keySpot.position.set(0, 4.2, 2.2);
+    keySpot.castShadow = true;
+    scene.add(keySpot);
 
-    let mixer = null;
-    let skeletonHelper = null;
+    // Cool cyan/blue rim light (outlines lats and arms)
+    const rimCyan = new THREE.DirectionalLight(0x38bdf8, 1.8);
+    rimCyan.position.set(-2.8, 2.2, -2.2);
+    scene.add(rimCyan);
+
+    // Intense magenta rim light (adds sculpted contour)
+    const rimMagenta = new THREE.DirectionalLight(0xc084fc, 2.2);
+    rimMagenta.position.set(2.8, 2.5, -2.0);
+    scene.add(rimMagenta);
+
+    // Stage Podium & Grid Ring
+    const stageGeo = new THREE.CylinderGeometry(1.2, 1.3, 0.08, 48);
+    const stageMat = new THREE.MeshStandardMaterial({
+      color: 0x181424,
+      roughness: 0.45,
+      metalness: 0.6
+    });
+    const stage = new THREE.Mesh(stageGeo, stageMat);
+    stage.position.y = -0.04;
+    stage.receiveShadow = true;
+    scene.add(stage);
+
+    const ringGeo = new THREE.RingGeometry(1.15, 1.22, 48);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xa855f7,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.6
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.005;
+    scene.add(ring);
+
+    // ==========================================
+    // 3. FIST CURLING HELPER
+    // ==========================================
+    function makeFists(curlAmount = 0.85) {
+      const res = {};
+      ['Left', 'Right'].forEach(side => {
+        const prefix = `mixamorig${side}Hand`;
+        ['Index', 'Middle', 'Ring', 'Pinky'].forEach(f => {
+          res[`${prefix}${f}1`] = [curlAmount, 0, 0];
+          res[`${prefix}${f}2`] = [curlAmount * 1.15, 0, 0];
+          res[`${prefix}${f}3`] = [curlAmount * 0.9, 0, 0];
+        });
+        const thumbDir = side === 'Left' ? 0.35 : -0.35;
+        res[`${prefix}Thumb1`] = [curlAmount * 0.4, thumbDir, 0];
+        res[`${prefix}Thumb2`] = [curlAmount * 0.65, 0, 0];
+        res[`${prefix}Thumb3`] = [curlAmount * 0.5, 0, 0];
+      });
+      return res;
+    }
+
+    // ==========================================
+    // 4. THE 3 ICONIC BODYBUILDING POSES
+    // ==========================================
+    const POSES = {
+      // 1. ДВОЙНОЙ БИЦЕПС СПЕРЕДИ (Front Double Biceps)
+      double_biceps: {
+        title: 'Двойной бицепс спереди',
+        muscles: 'Пик бицепса • Верх грудных • Дельты • Широчайшие',
+        rotations: {
+          ...makeFists(0.9),
+          mixamorigSpine: [-0.06, 0, 0],
+          mixamorigSpine1: [-0.06, 0, 0],
+          mixamorigSpine2: [-0.08, 0, 0],
+          mixamorigLeftShoulder: [0.08, 0, 0.08],
+          mixamorigRightShoulder: [-0.08, 0, -0.08],
+          mixamorigLeftArm: [1.35, -0.1, 0.1],
+          mixamorigRightArm: [-1.4, 0.4, 0.2],
+          mixamorigLeftForeArm: [1.55, 0.2, -0.4],
+          mixamorigRightForeArm: [0.4, 0.0, -1.2],
+          mixamorigLeftHand: [0.35, 0.1, -0.15],
+          mixamorigRightHand: [-0.35, -0.1, 0.15],
+          mixamorigLeftUpLeg: [0.1, 0, 0.16],
+          mixamorigRightUpLeg: [0.1, 0, -0.16],
+          mixamorigLeftLeg: [-0.15, 0, 0],
+          mixamorigRightLeg: [-0.15, 0, 0]
+        }
+      },
+
+      // 2. КРАБ (Most Muscular / Максимальная мускулистость)
+      most_muscular: {
+        title: 'Краб (Максимальная мускулистость)',
+        muscles: 'Грудные мышцы • Трапеции • Пресс • Плечи',
+        rotations: {
+          ...makeFists(0.95),
+          mixamorigSpine: [0.16, 0, 0],
+          mixamorigSpine1: [0.16, 0, 0],
+          mixamorigSpine2: [0.18, 0, 0],
+          mixamorigNeck: [-0.08, 0, 0],
+          mixamorigHead: [0.12, 0, 0],
+          mixamorigLeftShoulder: [0.22, 0.18, 0.12],
+          mixamorigRightShoulder: [-0.22, -0.18, -0.12],
+          mixamorigLeftArm: [0.3, 0.3, -0.4],
+          mixamorigRightArm: [-0.2, 0.0, -0.4],
+          mixamorigLeftForeArm: [1.1, 0.1, -0.5],
+          mixamorigRightForeArm: [0.0, 0.0, -0.8],
+          mixamorigLeftHand: [0.4, 0.1, -0.2],
+          mixamorigRightHand: [-0.4, -0.1, 0.2],
+          mixamorigLeftUpLeg: [0.15, 0, 0.22],
+          mixamorigRightUpLeg: [0.15, 0, -0.22],
+          mixamorigLeftLeg: [-0.25, 0, 0],
+          mixamorigRightLeg: [-0.25, 0, 0]
+        }
+      },
+
+      // 3. ШИРОЧАЙШИЕ СПЕРЕДИ (Front Lat Spread)
+      lat_spread: {
+        title: 'Широчайшие спереди',
+        muscles: 'Широчайшие мышцы (Lats) • Косые мышцы • Квадрицепсы',
+        rotations: {
+          ...makeFists(0.6),
+          mixamorigSpine: [-0.08, 0, 0],
+          mixamorigSpine1: [-0.08, 0, 0],
+          mixamorigSpine2: [-0.10, 0, 0],
+          mixamorigHead: [-0.05, 0, 0],
+          mixamorigLeftShoulder: [0.06, 0.25, 0.18],
+          mixamorigRightShoulder: [-0.06, -0.25, -0.18],
+          mixamorigLeftArm: [0.5, 0.1, -0.4],
+          mixamorigRightArm: [-0.6, -0.4, -0.4],
+          mixamorigLeftForeArm: [1.4, 0.1, -0.6],
+          mixamorigRightForeArm: [-1.6, 0.0, -1.2],
+          mixamorigLeftHand: [0.2, 0, 0.1],
+          mixamorigRightHand: [-0.2, 0, -0.1],
+          mixamorigLeftUpLeg: [0.12, 0, 0.25],
+          mixamorigRightUpLeg: [0.12, 0, -0.25],
+          mixamorigLeftLeg: [-0.18, 0, 0],
+          mixamorigRightLeg: [-0.18, 0, 0]
+        }
+      }
+    };
+
+    // ==========================================
+    // 5. MODEL LOADING & SKELETON INITIALIZATION
+    // ==========================================
+    const bones = {};
+    const restQuats = {};
+    const startQuats = {};
+    const targetQuats = {};
+
+    let currentModel = null;
+    let skinnedMeshes = [];
+    let isTransitioning = false;
+    let transitionStartTime = 0;
+    const transitionDuration = 600; // ms
 
     const loader = new THREE.GLTFLoader();
     loader.load('./models/shadow_rigged.glb', (gltf) => {
-      document.getElementById('loading').style.display = 'none';
-      const model = gltf.scene;
+      document.getElementById('loadingOverlay').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }, 350);
 
-      // Colorize submeshes so they can be inspected
-      model.traverse(child => {
-        if (child.isMesh) {
+      currentModel = gltf.scene;
+
+      currentModel.traverse(child => {
+        if (child.isSkinnedMesh) {
+          skinnedMeshes.push(child);
+          child.frustumCulled = false;
+          // Crucial: assign material WITH skinning: true!
           child.material = new THREE.MeshStandardMaterial({
-            color: 0x3b384d,
-            roughness: 0.6,
-            metalness: 0.1
+            color: 0x38344c,
+            roughness: 0.38,
+            metalness: 0.4,
+            skinning: true
           });
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+        if (child.isBone) {
+          bones[child.name] = child;
+          restQuats[child.name] = child.quaternion.clone();
         }
       });
 
-      // Scale to human height (~1.8m)
-      model.scale.setScalar(1.8);
-      scene.add(model);
+      // Human height scale
+      currentModel.scale.setScalar(1.8);
+      scene.add(currentModel);
 
-      // Show skeleton bones
-      skeletonHelper = new THREE.SkeletonHelper(model);
-      skeletonHelper.material.linewidth = 2;
-      scene.add(skeletonHelper);
+      // Instantly start in the iconic Double Biceps pose!
+      applyPose('double_biceps', 0);
+
     }, undefined, (err) => {
-      document.getElementById('loading').textContent = 'Ошибка загрузки: ' + err.message;
+      console.error(err);
+      document.querySelector('.loading-title').textContent = 'Ошибка загрузки: ' + err.message;
+    });
+
+    // Helper: look up bone rotation with or without colon
+    function getRotationForBone(rotations, boneName) {
+      if (!rotations) return [0, 0, 0];
+      if (rotations[boneName]) return rotations[boneName];
+      const noColon = boneName.replace(/:/g, '');
+      if (rotations[noColon]) return rotations[noColon];
+      const withColon = boneName.replace('mixamorig', 'mixamorig:');
+      if (rotations[withColon]) return rotations[withColon];
+      return [0, 0, 0];
+    }
+
+    // ==========================================
+    // 6. POSE APPLICATION & SLERP INTERPOLATION
+    // ==========================================
+    function applyPose(poseKey, duration = 600) {
+      if (!bones || Object.keys(bones).length === 0) return;
+      const poseDef = POSES[poseKey];
+      if (!poseDef) return;
+
+      // Update badge
+      document.getElementById('badgePoseTitle').textContent = poseDef.title;
+      document.getElementById('badgeMuscles').textContent = poseDef.muscles;
+
+      // Setup quaternions
+      for (const name in bones) {
+        startQuats[name] = bones[name].quaternion.clone();
+        const restQ = restQuats[name];
+        if (!restQ) continue;
+
+        const delta = getRotationForBone(poseDef.rotations, name);
+        const euler = new THREE.Euler(delta[0], delta[1], delta[2], 'XYZ');
+        const deltaQ = new THREE.Quaternion().setFromEuler(euler);
+        targetQuats[name] = restQ.clone().multiply(deltaQ);
+      }
+
+      if (duration === 0) {
+        // Instant set
+        for (const name in bones) {
+          if (targetQuats[name]) {
+            bones[name].quaternion.copy(targetQuats[name]);
+          }
+        }
+        if (currentModel) currentModel.updateMatrixWorld(true);
+        skinnedMeshes.forEach(m => m.skeleton.update());
+        isTransitioning = false;
+      } else {
+        transitionStartTime = performance.now();
+        isTransitioning = true;
+      }
+    }
+
+    // ==========================================
+    // 7. USER INTERACTION
+    // ==========================================
+    const poseButtons = document.querySelectorAll('.pose-btn');
+    poseButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        poseButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const poseKey = btn.dataset.pose;
+        applyPose(poseKey, 600);
+      });
     });
 
     window.addEventListener('resize', () => {
@@ -111,12 +560,42 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    function animate() {
+    // ==========================================
+    // 8. ANIMATION LOOP
+    // ==========================================
+    function animate(now) {
       requestAnimationFrame(animate);
+
+      // Smooth SLERP animation
+      if (isTransitioning) {
+        const elapsed = now - transitionStartTime;
+        const progress = Math.min(elapsed / transitionDuration, 1.0);
+
+        // Smooth cubic easing (easeInOutCubic)
+        const t = progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+        for (const name in bones) {
+          if (startQuats[name] && targetQuats[name]) {
+            bones[name].quaternion.copy(startQuats[name]).slerp(targetQuats[name], t);
+          }
+        }
+
+        // Force skeleton & world matrix update
+        if (currentModel) currentModel.updateMatrixWorld(true);
+        skinnedMeshes.forEach(m => m.skeleton.update());
+
+        if (progress >= 1.0) {
+          isTransitioning = false;
+        }
+      }
+
       controls.update();
       renderer.render(scene, camera);
     }
-    animate();
+
+    animate(performance.now());
   </script>
 </body>
 </html>

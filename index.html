@@ -298,7 +298,7 @@
 
         <!-- Live Calculation Preview -->
         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-xs" id="obPreviewBox">
-          <div class="text-slate-400 text-[11px] mb-1">Предварительный расчет Mifflin-St Jeor:</div>
+          <div class="text-slate-400 text-[11px] mb-1">Предварительный расчет:</div>
           <div class="text-amber-400 font-bold text-sm" id="obKcalPreview">Заполни параметры выше</div>
           <div class="text-[10px] text-slate-400" id="obMacrosPreview">Белки: 2г/кг · Жиры: 1г/кг</div>
         </div>
@@ -416,9 +416,33 @@
       return mealsByDate[selectedNutritionDate];
     }
 
-    // Honest Mifflin-St Jeor Formula
+    function ensureCustomMacros() {
+      if (!userProfile) return;
+      if (!userProfile.customMacros) {
+        const w = Number(userProfile.currentWeight) || 70;
+        const h = Number(userProfile.height) || 175;
+        const age = Number(userProfile.age) || 25;
+        const isMale = userProfile.gender === 'male';
+        const bmr = (10 * w) + (6.25 * h) - (5 * age) + (isMale ? 5 : -161);
+        const tdee = Math.round(bmr * 1.375);
+        let baseKcal = tdee;
+        if (userProfile.currentGoal === 'cut') baseKcal = Math.max(1200, tdee - 400);
+        else if (userProfile.currentGoal === 'bulk') baseKcal = tdee + 350;
+        const baseP = Math.round(w * 2.0);
+        const baseF = Math.round(w * 1.0);
+        const baseC = Math.max(0, Math.round((baseKcal - baseP * 4 - baseF * 9) / 4));
+        userProfile.customMacros = {
+          kcal: baseKcal,
+          p: baseP,
+          f: baseF,
+          c: baseC
+        };
+      }
+    }
+
+    // Honest Mifflin-St Jeor Formula & Custom Targets
     function getGoalTargetData(goal) {
-      if (!userProfile) return { goal: 'bulk', tdee: 2000, kcal: 2300, p: 140, f: 70, c: 275 };
+      if (!userProfile) return { goal: 'bulk', tdee: 2000, kcal: 2300, p: 140, f: 70, c: 275, isCustom: false };
 
       const g = goal || userProfile.currentGoal || 'bulk';
       const w = Number(userProfile.currentWeight) || 70;
@@ -429,6 +453,18 @@
       const bmr = (10 * w) + (6.25 * h) - (5 * age) + (isMale ? 5 : -161);
       const tdee = Math.round(bmr * 1.375);
 
+      if (g === 'custom') {
+        ensureCustomMacros();
+        const cm = userProfile.customMacros || {};
+        const p = (cm.p !== undefined && cm.p !== null && cm.p !== '') ? Number(cm.p) : Math.round(w * 2.0);
+        const f = (cm.f !== undefined && cm.f !== null && cm.f !== '') ? Number(cm.f) : Math.round(w * 1.0);
+        const c = (cm.c !== undefined && cm.c !== null && cm.c !== '') ? Number(cm.c) : Math.max(0, Math.round((tdee - p * 4 - f * 9) / 4));
+        const kcal = (cm.kcal !== undefined && cm.kcal !== null && cm.kcal !== '' && Number(cm.kcal) > 0)
+          ? Number(cm.kcal)
+          : Math.round((p * 4) + (f * 9) + (c * 4));
+        return { goal: 'custom', tdee, kcal, p, f, c, isCustom: true };
+      }
+
       let kcal = tdee;
       if (g === 'cut') kcal = Math.max(1200, tdee - 400);
       if (g === 'bulk') kcal = tdee + 350;
@@ -438,7 +474,7 @@
       const carbKcal = Math.max(0, kcal - (p * 4) - (f * 9));
       const c = Math.round(carbKcal / 4);
 
-      return { goal: g, tdee, kcal, p, f, c };
+      return { goal: g, tdee, kcal, p, f, c, isCustom: false };
     }
 
     function getHeroTitle(lvl) {
@@ -522,6 +558,15 @@
       const tgtW = Number(document.getElementById('obTargetWeight').value) || (curW + 5.0);
       const goal = document.getElementById('obGoal').value || "bulk";
 
+      const bmr = (10 * curW) + (6.25 * height) - (5 * age) + (gender === 'male' ? 5 : -161);
+      const tdee = Math.round(bmr * 1.375);
+      let initKcal = tdee;
+      if (goal === 'cut') initKcal = Math.max(1200, tdee - 400);
+      if (goal === 'bulk') initKcal = tdee + 350;
+      const initP = Math.round(curW * 2.0);
+      const initF = Math.round(curW * 1.0);
+      const initC = Math.max(0, Math.round((initKcal - initP * 4 - initF * 9) / 4));
+
       userProfile = {
         name: name,
         gender: gender,
@@ -532,7 +577,13 @@
         currentGoal: goal,
         level: 1,
         xp: 0,
-        isConfigured: true
+        isConfigured: true,
+        customMacros: {
+          kcal: initKcal,
+          p: initP,
+          f: initF,
+          c: initC
+        }
       };
 
       weightHistory = [{ date: "Сегодня", val: curW }];
@@ -601,7 +652,7 @@
     // 1. CHARACTER SCREEN
     function getCharacterHTML() {
       const currentGoalData = getGoalTargetData(userProfile.currentGoal);
-      const goalBadge = userProfile.currentGoal === 'bulk' ? '🔨 НАБОР МАССЫ' : (userProfile.currentGoal === 'cut' ? '🔻 ПОХУДЕНИЕ' : '⚖️ В БАЛАНСЕ');
+      const goalBadge = userProfile.currentGoal === 'bulk' ? '🔨 НАБОР МАССЫ' : (userProfile.currentGoal === 'cut' ? '🔻 ПОХУДЕНИЕ' : (userProfile.currentGoal === 'custom' ? '🎯 СВОЯ ЦЕЛЬ' : '⚖️ В БАЛАНСЕ'));
       const lvl = userProfile.level || 1;
       const xp = userProfile.xp || 0;
       const xpPct = Math.min(100, Math.round((xp / 1000) * 100));
@@ -645,12 +696,12 @@
         <!-- Nutrition Target Card -->
         <div class="card mb-3 space-y-2">
           <div class="flex justify-between items-center text-xs">
-            <span class="text-slate-300 font-semibold">🎯 Твой план по Mifflin-St Jeor:</span>
+            <span class="text-slate-300 font-semibold">${userProfile.currentGoal === 'custom' ? '🎯 Твоя норма БЖУ:' : '🎯 Твой план:'}</span>
             <span class="text-amber-400 font-bold">${currentGoalData.kcal} ккал/день</span>
           </div>
           <div class="flex justify-between text-[11px] text-slate-400 bg-slate-900/60 p-2 rounded">
-            <span>Белки: <b class="text-red-400">${currentGoalData.p}г</b> (2г/кг)</span>
-            <span>Жиры: <b class="text-amber-400">${currentGoalData.f}г</b> (1г/кг)</span>
+            <span>Белки: <b class="text-red-400">${currentGoalData.p}г</b>${userProfile.currentGoal !== 'custom' ? ' (2г/кг)' : ''}</span>
+            <span>Жиры: <b class="text-amber-400">${currentGoalData.f}г</b>${userProfile.currentGoal !== 'custom' ? ' (1г/кг)' : ''}</span>
             <span>Углеводы: <b class="text-sky-400">${currentGoalData.c}г</b></span>
           </div>
         </div>
@@ -688,7 +739,7 @@
       }
       if (tip) {
         tip.innerHTML = (mode === '3d') 
-          ? '🖐 Вращай 3D-героя на 360° пальцем или мышью. Студия «Платина».'
+          ? '🖐 Вращай 3D-героя пальцем или мышью. Студия «Платина».'
           : (workouts.length === 0 ? 'Мышцы пока отдыхают. Запиши первую тренировку, чтобы зажечь сияние!' : 'Тапни по мышце, чтобы узнать статус тренированности!');
       }
     }
@@ -858,17 +909,52 @@
           </div>
 
           <div class="grid grid-cols-3 gap-2 text-center text-xs pt-1">
-            <div class="p-1.5 rounded bg-red-950/30 border border-red-500/30">
-              <div class="text-red-400 font-bold" id="totalPDisplay">${totals.p}г</div>
-              <div class="text-[9px] text-slate-400">Белки (${goalTarget.p}г)</div>
+            <div class="p-2 rounded bg-red-950/30 border border-red-500/30 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-baseline mb-0.5">
+                  <span class="text-[9px] text-slate-400">Белки</span>
+                  <span class="text-[9px] text-slate-400 font-semibold" id="targetPDisplay">${goalTarget.p}г</span>
+                </div>
+                <div class="text-red-400 font-extrabold text-sm" id="totalPDisplay">${totals.p}г</div>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded overflow-hidden my-1 border border-slate-700/50">
+                <div class="bg-red-500 h-full transition-all duration-300" id="barPDisplay" style="width: ${Math.min(100, Math.round((totals.p / (goalTarget.p || 1)) * 100))}%"></div>
+              </div>
+              <div class="text-[9px] ${totals.p >= goalTarget.p ? 'text-emerald-400 font-bold' : 'text-slate-400'}" id="remPDisplay">
+                ${totals.p >= goalTarget.p ? 'Готово ✅' : `ещё ${goalTarget.p - totals.p}г`}
+              </div>
             </div>
-            <div class="p-1.5 rounded bg-amber-950/30 border border-amber-500/30">
-              <div class="text-amber-400 font-bold" id="totalFDisplay">${totals.f}г</div>
-              <div class="text-[9px] text-slate-400">Жиры (${goalTarget.f}г)</div>
+
+            <div class="p-2 rounded bg-amber-950/30 border border-amber-500/30 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-baseline mb-0.5">
+                  <span class="text-[9px] text-slate-400">Жиры</span>
+                  <span class="text-[9px] text-slate-400 font-semibold" id="targetFDisplay">${goalTarget.f}г</span>
+                </div>
+                <div class="text-amber-400 font-extrabold text-sm" id="totalFDisplay">${totals.f}г</div>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded overflow-hidden my-1 border border-slate-700/50">
+                <div class="bg-amber-500 h-full transition-all duration-300" id="barFDisplay" style="width: ${Math.min(100, Math.round((totals.f / (goalTarget.f || 1)) * 100))}%"></div>
+              </div>
+              <div class="text-[9px] ${totals.f >= goalTarget.f ? 'text-emerald-400 font-bold' : 'text-slate-400'}" id="remFDisplay">
+                ${totals.f >= goalTarget.f ? 'Готово ✅' : `ещё ${goalTarget.f - totals.f}г`}
+              </div>
             </div>
-            <div class="p-1.5 rounded bg-sky-950/30 border border-sky-500/30">
-              <div class="text-sky-400 font-bold" id="totalCDisplay">${totals.c}г</div>
-              <div class="text-[9px] text-slate-400">Углеводы (${goalTarget.c}г)</div>
+
+            <div class="p-2 rounded bg-sky-950/30 border border-sky-500/30 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-baseline mb-0.5">
+                  <span class="text-[9px] text-slate-400">Углеводы</span>
+                  <span class="text-[9px] text-slate-400 font-semibold" id="targetCDisplay">${goalTarget.c}г</span>
+                </div>
+                <div class="text-sky-400 font-extrabold text-sm" id="totalCDisplay">${totals.c}г</div>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded overflow-hidden my-1 border border-slate-700/50">
+                <div class="bg-sky-500 h-full transition-all duration-300" id="barCDisplay" style="width: ${Math.min(100, Math.round((totals.c / (goalTarget.c || 1)) * 100))}%"></div>
+              </div>
+              <div class="text-[9px] ${totals.c >= goalTarget.c ? 'text-emerald-400 font-bold' : 'text-slate-400'}" id="remCDisplay">
+                ${totals.c >= goalTarget.c ? 'Готово ✅' : `ещё ${goalTarget.c - totals.c}г`}
+              </div>
             </div>
           </div>
         </div>
@@ -916,12 +1002,33 @@
 
         const totalPEl = document.getElementById('totalPDisplay');
         if (totalPEl) totalPEl.innerText = `${totals.p}г`;
+        const barPEl = document.getElementById('barPDisplay');
+        if (barPEl) barPEl.style.width = `${Math.min(100, Math.round((totals.p / (goalTarget.p || 1)) * 100))}%`;
+        const remPEl = document.getElementById('remPDisplay');
+        if (remPEl) {
+          remPEl.innerText = totals.p >= goalTarget.p ? 'Готово ✅' : `ещё ${goalTarget.p - totals.p}г`;
+          remPEl.className = `text-[9px] ${totals.p >= goalTarget.p ? 'text-emerald-400 font-bold' : 'text-slate-400'}`;
+        }
 
         const totalFEl = document.getElementById('totalFDisplay');
         if (totalFEl) totalFEl.innerText = `${totals.f}г`;
+        const barFEl = document.getElementById('barFDisplay');
+        if (barFEl) barFEl.style.width = `${Math.min(100, Math.round((totals.f / (goalTarget.f || 1)) * 100))}%`;
+        const remFEl = document.getElementById('remFDisplay');
+        if (remFEl) {
+          remFEl.innerText = totals.f >= goalTarget.f ? 'Готово ✅' : `ещё ${goalTarget.f - totals.f}г`;
+          remFEl.className = `text-[9px] ${totals.f >= goalTarget.f ? 'text-emerald-400 font-bold' : 'text-slate-400'}`;
+        }
 
         const totalCEl = document.getElementById('totalCDisplay');
         if (totalCEl) totalCEl.innerText = `${totals.c}г`;
+        const barCEl = document.getElementById('barCDisplay');
+        if (barCEl) barCEl.style.width = `${Math.min(100, Math.round((totals.c / (goalTarget.c || 1)) * 100))}%`;
+        const remCEl = document.getElementById('remCDisplay');
+        if (remCEl) {
+          remCEl.innerText = totals.c >= goalTarget.c ? 'Готово ✅' : `ещё ${goalTarget.c - totals.c}г`;
+          remCEl.className = `text-[9px] ${totals.c >= goalTarget.c ? 'text-emerald-400 font-bold' : 'text-slate-400'}`;
+        }
 
         const pctEl = document.getElementById('pctDisplay');
         if (pctEl) {
@@ -1147,6 +1254,7 @@
       const cutTarget = getGoalTargetData('cut');
       const maintainTarget = getGoalTargetData('maintain');
       const bulkTarget = getGoalTargetData('bulk');
+      const customTarget = getGoalTargetData('custom');
 
       let rowsHTML = Object.keys(measurements).map(key => {
         const item = measurements[key];
@@ -1211,32 +1319,89 @@
           </div>
         </div>
 
-        <!-- Goal Selection (Calculated via Mifflin-St Jeor) -->
+        <!-- Goal Selection (Calculated via Mifflin-St Jeor or Custom Targets) -->
         <div class="card mb-3">
           <div class="flex justify-between text-[11px] font-bold text-sky-300 font-cinzel mb-2">
             <span>ВЫБОР ЦЕЛИ И ПЛАНА</span>
-            <span class="text-amber-400 font-normal">Белки 2г · Жиры 1г</span>
+            <span class="text-amber-400 font-normal">Формулы или свои цифры</span>
           </div>
 
-          <div onclick="selectGoalOption('cut')" class="p-2.5 rounded-lg mb-1.5 text-xs cursor-pointer border ${userProfile.currentGoal==='cut'?'border-amber-400 bg-sky-950/40':'border-slate-800 bg-slate-900 opacity-75'}">
+          <div onclick="selectGoalOption('cut')" class="p-2.5 rounded-lg mb-1.5 text-xs cursor-pointer border transition ${userProfile.currentGoal==='cut'?'border-amber-400 bg-sky-950/40 shadow-sm':'border-slate-800 bg-slate-900 opacity-75 hover:opacity-100'}">
             <div class="flex justify-between font-bold text-red-400">
               <span>🔻 Похудение (Сушка) ${userProfile.currentGoal==='cut'?'✓ АКТИВНО':''}</span><span>${cutTarget.kcal} ккал</span>
             </div>
             <div class="text-[10px] text-slate-400">Б: ${cutTarget.p}г · Ж: ${cutTarget.f}г · У: ${cutTarget.c}г</div>
           </div>
 
-          <div onclick="selectGoalOption('maintain')" class="p-2.5 rounded-lg mb-1.5 text-xs cursor-pointer border ${userProfile.currentGoal==='maintain'?'border-amber-400 bg-sky-950/40':'border-slate-800 bg-slate-900 opacity-75'}">
+          <div onclick="selectGoalOption('maintain')" class="p-2.5 rounded-lg mb-1.5 text-xs cursor-pointer border transition ${userProfile.currentGoal==='maintain'?'border-amber-400 bg-sky-950/40 shadow-sm':'border-slate-800 bg-slate-900 opacity-75 hover:opacity-100'}">
             <div class="flex justify-between font-bold text-sky-300">
               <span>⚖️ Поддержание ${userProfile.currentGoal==='maintain'?'✓ АКТИВНО':''}</span><span>${maintainTarget.kcal} ккал</span>
             </div>
             <div class="text-[10px] text-slate-400">Б: ${maintainTarget.p}г · Ж: ${maintainTarget.f}г · У: ${maintainTarget.c}г</div>
           </div>
 
-          <div onclick="selectGoalOption('bulk')" class="p-2.5 rounded-lg text-xs cursor-pointer border ${userProfile.currentGoal==='bulk'?'border-amber-400 bg-sky-950/40':'border-slate-800 bg-slate-900 opacity-75'}">
+          <div onclick="selectGoalOption('bulk')" class="p-2.5 rounded-lg mb-2 text-xs cursor-pointer border transition ${userProfile.currentGoal==='bulk'?'border-amber-400 bg-sky-950/40 shadow-sm':'border-slate-800 bg-slate-900 opacity-75 hover:opacity-100'}">
             <div class="flex justify-between font-bold text-amber-300">
               <span>🔺 Набор массы ${userProfile.currentGoal==='bulk'?'✓ АКТИВНО':''}</span><span>${bulkTarget.kcal} ккал</span>
             </div>
             <div class="text-[10px] text-slate-300">Б: ${bulkTarget.p}г · Ж: ${bulkTarget.f}г · У: ${bulkTarget.c}г</div>
+          </div>
+
+          <!-- 4. СВОЯ НОРМА БЖУ (ИНДИВИДУАЛЬНЫЕ ЦИФРЫ) -->
+          <div id="customGoalCard" class="p-3 rounded-xl text-xs border transition ${userProfile.currentGoal==='custom'?'border-amber-400 bg-gradient-to-b from-purple-950/40 to-slate-900 shadow-md shadow-purple-500/10':'border-slate-800 bg-slate-900/90'}">
+            <div onclick="selectGoalOption('custom')" class="flex justify-between items-center cursor-pointer mb-1">
+              <div class="flex items-center gap-1.5 font-bold text-purple-300">
+                <span>🎯 Своя норма БЖУ</span>
+                <span id="customGoalBadge" class="text-[10px] font-bold ${userProfile.currentGoal==='custom'?'text-amber-400 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/30':'text-slate-500'}">
+                  ${userProfile.currentGoal==='custom'?'✓ АКТИВНО':'нажмите для выбора'}
+                </span>
+              </div>
+              <span class="text-amber-400 font-extrabold text-sm font-cinzel" id="customTargetKcal">${customTarget.kcal} ккал</span>
+            </div>
+
+            <div class="text-[10px] text-slate-400 mb-2.5 flex justify-between items-center" id="customTargetSummary">
+              <span>Б: <b class="text-red-400">${customTarget.p}г</b> · Ж: <b class="text-amber-400">${customTarget.f}г</b> · У: <b class="text-sky-400">${customTarget.c}г</b></span>
+              <span class="text-[9px] text-slate-500">мои цифры</span>
+            </div>
+
+            <!-- Custom Inputs Form -->
+            <div class="pt-2.5 border-t border-slate-800/80" onclick="event.stopPropagation()">
+              <div class="text-[10px] font-semibold text-slate-300 mb-2">Желаемые цифры:</div>
+
+              <div class="grid grid-cols-4 gap-2 text-center">
+                <div>
+                  <div class="text-[9px] text-red-400 font-bold mb-1">Белки (г)</div>
+                  <input type="number" step="1" min="0" id="customInputP"
+                    value="${customTarget.p}" 
+                    oninput="updateCustomMacroLive('p', this.value)" 
+                    class="w-full bg-slate-950 border border-slate-700 focus:border-red-400 rounded-lg p-2 text-center text-xs text-white font-bold outline-none">
+                </div>
+                <div>
+                  <div class="text-[9px] text-amber-400 font-bold mb-1">Жиры (г)</div>
+                  <input type="number" step="1" min="0" id="customInputF"
+                    value="${customTarget.f}" 
+                    oninput="updateCustomMacroLive('f', this.value)" 
+                    class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg p-2 text-center text-xs text-white font-bold outline-none">
+                </div>
+                <div>
+                  <div class="text-[9px] text-sky-400 font-bold mb-1">Углеводы (г)</div>
+                  <input type="number" step="1" min="0" id="customInputC"
+                    value="${customTarget.c}" 
+                    oninput="updateCustomMacroLive('c', this.value)" 
+                    class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg p-2 text-center text-xs text-white font-bold outline-none">
+                </div>
+                <div>
+                  <div class="text-[9px] text-amber-300 font-bold mb-1">Калории</div>
+                  <input type="number" step="1" min="0" id="customInputKcal"
+                    value="${customTarget.kcal}" 
+                    oninput="updateCustomMacroLive('kcal', this.value)" 
+                    class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-lg p-2 text-center text-xs text-amber-300 font-bold outline-none">
+                </div>
+              </div>
+              <div class="text-[9px] text-slate-500 text-center mt-2">
+                💡 Задайте свои цели по белкам, жирам и углеводам. Калории рассчитываются автоматически (4-9-4) или вручную.
+              </div>
+            </div>
           </div>
 
           <div class="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
@@ -1326,9 +1491,63 @@
 
     function selectGoalOption(newGoal) {
       userProfile.currentGoal = newGoal;
+      if (newGoal === 'custom') {
+        ensureCustomMacros();
+      }
       saveAllState();
-      showToast(`🎯 Цель изменена на "${newGoal.toUpperCase()}". План пересчитан!`);
+      const goalNames = {
+        cut: 'ПОХУДЕНИЕ (СУШКА)',
+        maintain: 'ПОДДЕРЖАНИЕ',
+        bulk: 'НАБОР МАССЫ',
+        custom: 'СВОЯ НОРМА БЖУ'
+      };
+      showToast(`🎯 Цель: "${goalNames[newGoal] || newGoal.toUpperCase()}". План обновлен!`);
       render();
+    }
+
+    function updateCustomMacroLive(field, val) {
+      ensureCustomMacros();
+      const num = Number(val) || 0;
+      userProfile.customMacros[field] = num;
+
+      const switched = (userProfile.currentGoal !== 'custom');
+      if (switched) {
+        userProfile.currentGoal = 'custom';
+      }
+
+      if (field === 'p' || field === 'f' || field === 'c') {
+        const autoKcal = Math.round(
+          (userProfile.customMacros.p * 4) +
+          (userProfile.customMacros.f * 9) +
+          (userProfile.customMacros.c * 4)
+        );
+        userProfile.customMacros.kcal = autoKcal;
+        const kcalInput = document.getElementById('customInputKcal');
+        if (kcalInput) kcalInput.value = autoKcal;
+      }
+
+      saveAllState();
+
+      const customKcalEl = document.getElementById('customTargetKcal');
+      if (customKcalEl) customKcalEl.innerText = `${userProfile.customMacros.kcal} ккал`;
+
+      const summaryEl = document.getElementById('customTargetSummary');
+      if (summaryEl) {
+        summaryEl.innerHTML = `<span>Б: <b class="text-red-400">${userProfile.customMacros.p}г</b> · Ж: <b class="text-amber-400">${userProfile.customMacros.f}г</b> · У: <b class="text-sky-400">${userProfile.customMacros.c}г</b></span><span class="text-[9px] text-slate-500">мои цифры</span>`;
+      }
+
+      if (switched) {
+        const card = document.getElementById('customGoalCard');
+        if (card) {
+          card.className = "p-3 rounded-xl text-xs border transition border-amber-400 bg-gradient-to-b from-purple-950/40 to-slate-900 shadow-md shadow-purple-500/10";
+        }
+        const badge = document.getElementById('customGoalBadge');
+        if (badge) {
+          badge.className = "text-[10px] font-bold text-amber-400 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/30";
+          badge.innerText = "✓ АКТИВНО";
+        }
+        showToast("🎯 Цель переключена на свои БЖУ!");
+      }
     }
 
     function updateTargetWeight(val) {
@@ -1523,6 +1742,7 @@
           const parsed = JSON.parse(p);
           if (parsed && parsed.isConfigured) {
             userProfile = parsed;
+            ensureCustomMacros();
           }
         }
         const w = localStorage.getItem('herogym_weights');
